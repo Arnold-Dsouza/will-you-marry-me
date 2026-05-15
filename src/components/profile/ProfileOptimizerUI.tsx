@@ -1,20 +1,28 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle2, AlertCircle, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 export function ProfileOptimizerUI() {
+  const { user } = useUser();
+  const db = useFirestore();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AIProfileOptimizerOutput | null>(null);
   const { toast } = useToast();
+
+  const userDocRef = user && db ? doc(db, "users", user.uid) : null;
+  const { data: profile } = useDoc(userDocRef);
 
   const [formData, setFormData] = useState({
     rawBio: "",
@@ -22,6 +30,17 @@ export function ProfileOptimizerUI() {
     personalityTraits: [] as string[],
     targetAudienceDescription: "",
   });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        rawBio: profile.bio || "",
+        faithDetails: profile.faithDetails || "",
+        personalityTraits: profile.personalityTraits || [],
+        targetAudienceDescription: profile.targetAudienceDescription || "",
+      });
+    }
+  }, [profile]);
 
   const [traitInput, setTraitInput] = useState("");
 
@@ -68,6 +87,32 @@ export function ProfileOptimizerUI() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async (bioToSave?: string) => {
+    if (!user || !db) {
+      toast({ title: "Please log in", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updatedData = {
+        ...formData,
+        bio: bioToSave || formData.rawBio,
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await setDoc(doc(db, "users", user.uid), updatedData, { merge: true });
+      toast({ title: "Profile Saved", description: "Your spiritual identity is now updated." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Save failed", description: error.message });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -129,17 +174,25 @@ export function ProfileOptimizerUI() {
             </div>
           </div>
 
-          <Button 
-            className="w-full h-12 rounded-xl text-lg font-bold" 
-            onClick={handleOptimize}
-            disabled={loading}
-          >
-            {loading ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Optimizing...</>
-            ) : (
-              "Optimize My Profile"
-            )}
-          </Button>
+          <div className="grid grid-cols-2 gap-4">
+            <Button 
+              variant="outline"
+              className="h-12 rounded-xl font-bold"
+              onClick={() => handleSaveProfile()}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Draft
+            </Button>
+            <Button 
+              className="h-12 rounded-xl font-bold" 
+              onClick={handleOptimize}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+              AI Optimize
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -157,12 +210,15 @@ export function ProfileOptimizerUI() {
                 <p className="text-lg leading-relaxed text-foreground italic whitespace-pre-wrap">
                   "{result.optimizedBio}"
                 </p>
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => {
                     navigator.clipboard.writeText(result.optimizedBio);
                     toast({ title: "Copied to clipboard" });
                   }}>
-                    Copy to Profile
+                    Copy
+                  </Button>
+                  <Button size="sm" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
+                    {saving ? "Saving..." : "Use This Bio"}
                   </Button>
                 </div>
               </CardContent>

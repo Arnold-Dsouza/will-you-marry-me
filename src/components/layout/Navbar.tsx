@@ -5,7 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText } from "lucide-react";
+import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
+import { useAuth, useUser } from "@/firebase";
+import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { name: "Matches", href: "/matches", icon: Search },
@@ -17,6 +20,26 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogin = async () => {
+    if (!auth) return;
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({ title: "Welcome back!", description: "Successfully logged in." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login failed", description: error.message });
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    toast({ title: "Logged out", description: "Come back soon!" });
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
@@ -50,18 +73,28 @@ export function Navbar() {
           })}
         </div>
 
-        <div className="flex items-center gap-4">
-          <Link href="/profile">
-             <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
-                <User className="w-5 h-5" />
-             </Button>
-          </Link>
-          <Button size="sm" className="rounded-full px-6 shadow-md font-bold hidden sm:flex">
-            Login
-          </Button>
-          <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90">
-            Sign Up Free
-          </Button>
+        <div className="flex items-center gap-2">
+          {user ? (
+            <>
+              <Link href="/profile">
+                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+                <LogOut className="w-5 h-5" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold hidden sm:flex" onClick={handleLogin}>
+                Login
+              </Button>
+              <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90" onClick={handleLogin}>
+                Sign Up Free
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </nav>

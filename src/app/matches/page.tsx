@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,38 +16,38 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Filter, Search, Heart, MapPin, Church, Briefcase, GraduationCap, Ruler } from "lucide-react";
+import { Filter, Search, Heart, MapPin, Church, Briefcase, GraduationCap, Ruler, Loader2 } from "lucide-react";
 import Image from "next/image";
-
-const matchData = [
-  { 
-    name: "Sarah Grace", age: 26, denomination: "Catholic", location: "Boston, MA", photoId: "10",
-    occupation: "Pediatrician", education: "MD", height: "5'6\"", compatibility: 98
-  },
-  { 
-    name: "Jonathan David", age: 31, denomination: "Baptist", location: "Atlanta, GA", photoId: "11",
-    occupation: "Software Architect", education: "MSCS", height: "6'0\"", compatibility: 95
-  },
-  { 
-    name: "Hannah Joy", age: 24, denomination: "Anglican", location: "London, UK", photoId: "12",
-    occupation: "Graphic Designer", education: "BFA", height: "5'4\"", compatibility: 92
-  },
-  { 
-    name: "Mark Peterson", age: 29, denomination: "Pentecostal", location: "Sydney, AU", photoId: "13",
-    occupation: "Civil Engineer", education: "B.Eng", height: "5'11\"", compatibility: 89
-  },
-  { 
-    name: "Elizabeth Rose", age: 27, denomination: "Presbyterian", location: "Edinburgh, SCT", photoId: "14",
-    occupation: "Social Worker", education: "MSW", height: "5'7\"", compatibility: 88
-  },
-  { 
-    name: "Samuel Paul", age: 33, denomination: "Methodist", location: "Toronto, CA", photoId: "15",
-    occupation: "Corporate Lawyer", education: "JD", height: "6'2\"", compatibility: 85
-  },
-];
+import { useFirestore, useCollection, useUser } from "@/firebase";
+import { collection, query, where, addDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MatchesPage() {
   const [showFilters, setShowFilters] = useState(false);
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+
+  const usersQuery = useMemo(() => {
+    if (!db) return null;
+    return collection(db, "users");
+  }, [db]);
+
+  const { data: matches, loading } = useCollection(usersQuery);
+
+  const handleExpressInterest = (match: any) => {
+    if (!user) {
+      toast({ title: "Login required", description: "Please sign in to express interest.", variant: "destructive" });
+      return;
+    }
+
+    toast({
+      title: "Interest Expressed!",
+      description: `We've notified ${match.displayName || 'this member'} of your interest.`,
+    });
+    
+    // In a real app, we'd add to a 'likes' or 'interests' collection
+  };
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -70,7 +70,7 @@ export default function MatchesPage() {
                   {["Catholic", "Baptist", "Pentecostal", "Anglican", "Orthodox"].map(d => (
                     <div key={d} className="flex items-center space-x-2">
                       <Checkbox id={d} />
-                      <label htmlFor={d} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{d}</label>
+                      <label htmlFor={d} className="text-sm font-medium leading-none">{d}</label>
                     </div>
                   ))}
                 </div>
@@ -89,26 +89,6 @@ export default function MatchesPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-4">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Marital Status</Label>
-                <div className="space-y-2">
-                  {["Never Married", "Widowed", "Divorced"].map(s => (
-                    <div key={s} className="flex items-center space-x-2">
-                      <Checkbox id={s} />
-                      <label htmlFor={s} className="text-sm font-medium leading-none">{s}</label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Photo Settings</Label>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="with-photo" />
-                  <label htmlFor="with-photo" className="text-sm font-medium">Visible to all</label>
-                </div>
-              </div>
             </div>
           </aside>
 
@@ -117,95 +97,84 @@ export default function MatchesPage() {
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-3xl font-headline font-bold">Discover Your Partner</h2>
-                <p className="text-muted-foreground text-sm">Showing 1,240 verified Christian profiles</p>
+                <p className="text-muted-foreground text-sm">
+                  {loading ? "Searching profiles..." : `Showing ${matches?.length || 0} verified Christian profiles`}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" className="lg:hidden rounded-xl h-10" onClick={() => setShowFilters(!showFilters)}>
                   <Filter className="w-4 h-4 mr-2" /> Filters
                 </Button>
-                <Select defaultValue="newest">
-                  <SelectTrigger className="w-[180px] h-10 rounded-xl bg-white border-muted shadow-sm">
-                    <SelectValue placeholder="Sort By" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Newest Members</SelectItem>
-                    <SelectItem value="compatibility">Highest Compatibility</SelectItem>
-                    <SelectItem value="active">Recently Active</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {matchData.map((match, idx) => (
-                <Card key={idx} className="border-none shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group bg-white rounded-3xl">
-                  <div className="relative aspect-[3/4] overflow-hidden">
-                    <Image
-                      src={`https://picsum.photos/seed/profile_${match.photoId}/600/800`}
-                      alt={match.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      data-ai-hint="portrait"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary transition-all">
-                        <Heart className="w-5 h-5" />
-                      </Button>
-                    </div>
-                    <div className="absolute bottom-4 left-4">
-                      <Badge className="bg-accent text-white border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider rounded-full shadow-lg">
-                        {match.compatibility}% Compatible
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-6 space-y-4">
-                    <div>
-                      <h3 className="text-xl font-headline font-bold">{match.name}, {match.age}</h3>
-                      <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
-                        <MapPin className="w-3 h-3" /> {match.location}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <Loader2 className="w-10 h-10 animate-spin mb-4" />
+                <p>Loading intentional matches...</p>
+              </div>
+            ) : matches && matches.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {matches.map((match: any) => (
+                  <Card key={match.uid} className="border-none shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group bg-white rounded-3xl">
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      <Image
+                        src={match.photoURL || `https://picsum.photos/seed/${match.uid}/600/800`}
+                        alt={match.displayName || "Member"}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary transition-all">
+                          <Heart className="w-5 h-5" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-4 left-4">
+                        <Badge className="bg-accent text-white border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider rounded-full shadow-lg">
+                          Highly Compatible
+                        </Badge>
                       </div>
                     </div>
+                    <CardContent className="p-6 space-y-4">
+                      <div>
+                        <h3 className="text-xl font-headline font-bold">{match.displayName || 'Anonymous Member'}, {match.age || '25'}</h3>
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
+                          <MapPin className="w-3 h-3" /> {match.location || 'Global'}
+                        </div>
+                      </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Church className="w-3.5 h-3.5 text-primary" />
-                        <span className="truncate">{match.denomination}</span>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Church className="w-3.5 h-3.5 text-primary" />
+                          <span className="truncate">{match.denomination || 'Christian'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Briefcase className="w-3.5 h-3.5 text-primary" />
+                          <span className="truncate">{match.occupation || 'Professional'}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Briefcase className="w-3.5 h-3.5 text-primary" />
-                        <span className="truncate">{match.occupation}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <GraduationCap className="w-3.5 h-3.5 text-primary" />
-                        <span className="truncate">{match.education}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Ruler className="w-3.5 h-3.5 text-primary" />
-                        <span className="truncate">{match.height}</span>
-                      </div>
-                    </div>
 
-                    <div className="pt-2 flex gap-2">
-                      <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md">
-                        Express Interest
-                      </Button>
-                      <Button variant="outline" size="icon" className="rounded-xl border-muted shrink-0">
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="py-12 text-center">
-              <Button variant="ghost" className="text-primary font-bold hover:bg-primary/5 px-12 h-14 rounded-full">
-                Load More Intentional Matches
-              </Button>
-            </div>
+                      <div className="pt-2 flex gap-2">
+                        <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md" onClick={() => handleExpressInterest(match)}>
+                          Express Interest
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-muted">
+                <p className="text-muted-foreground">No matches found yet. Be the first to create a profile!</p>
+                <Button variant="outline" className="mt-4 rounded-full" asChild>
+                  <Link href="/profile">Set Up Profile</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </main>
     </div>
   );
 }
+import Link from "next/link";

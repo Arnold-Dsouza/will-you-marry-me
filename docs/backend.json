@@ -1,0 +1,53 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "The spiritual and personal profile of a member.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["bride", "groom"] },
+        "denomination": { "type": "string" },
+        "occupation": { "type": "string" },
+        "education": { "type": "string" },
+        "height": { "type": "string" },
+        "location": { "type": "string" },
+        "maritalStatus": { "type": "string" },
+        "bio": { "type": "string" },
+        "faithDetails": { "type": "string" },
+        "personalityTraits": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "email"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message sent between two users.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverId", "text", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Public and private profile data for users."
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Direct messages between users."
+    }
+  }
+}
