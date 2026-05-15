@@ -17,10 +17,27 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Heart, Sparkles, ShieldCheck, Users, Quote, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth, useUser } from "@/firebase";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-couple");
   const router = useRouter();
+  const auth = useAuth();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const handleLogin = async () => {
+    if (!auth) return;
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({ title: "Welcome!", description: "Successfully signed in with Google." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login failed", description: error.message });
+    }
+  };
 
   const handleSearch = () => {
     router.push("/matches");
@@ -256,8 +273,8 @@ export default function Home() {
                   Download the "Will You Marry Me" app for a faster and smoother experience. Available on iOS and Android.
                 </p>
                 <div className="flex gap-4">
-                  <Button variant="secondary" size="lg" className="h-14 rounded-full px-8">App Store</Button>
-                  <Button variant="secondary" size="lg" className="h-14 rounded-full px-8">Google Play</Button>
+                  <Button variant="secondary" size="lg" className="h-14 rounded-full px-8" onClick={handleLogin}>App Store</Button>
+                  <Button variant="secondary" size="lg" className="h-14 rounded-full px-8" onClick={handleLogin}>Google Play</Button>
                 </div>
               </div>
               <div className="relative w-64 h-[500px] hidden lg:block z-10">

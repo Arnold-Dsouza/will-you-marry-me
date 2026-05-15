@@ -1,8 +1,15 @@
 
+"use client";
+
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Check, Star, Shield, MessageCircle, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth, useUser } from "@/firebase";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const plans = [
   {
@@ -50,6 +57,28 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const auth = useAuth();
+  const { user } = useUser();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handlePlanSelection = async () => {
+    if (user) {
+      toast({ title: "Plan selected", description: "This feature is coming soon in the production version." });
+      return;
+    }
+    
+    if (!auth) return;
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({ title: "Welcome!", description: "Successfully signed in with Google." });
+      router.push("/profile");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login failed", description: error.message });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/20">
       <Navbar />
@@ -92,10 +121,14 @@ export default function PricingPage() {
                 ))}
               </CardContent>
               <CardFooter className="p-8">
-                <Button className={cn(
-                  "w-full h-12 rounded-full font-bold shadow-lg",
-                  plan.variant === "accent" ? "bg-accent hover:bg-accent/90" : ""
-                )} variant={plan.variant as any}>
+                <Button 
+                  className={cn(
+                    "w-full h-12 rounded-full font-bold shadow-lg",
+                    plan.variant === "accent" ? "bg-accent hover:bg-accent/90" : ""
+                  )} 
+                  variant={plan.variant as any}
+                  onClick={handlePlanSelection}
+                >
                   {plan.buttonText}
                 </Button>
               </CardFooter>
@@ -123,8 +156,4 @@ export default function PricingPage() {
       </main>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

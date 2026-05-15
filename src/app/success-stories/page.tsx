@@ -1,9 +1,15 @@
 
+"use client";
+
 import { Navbar } from "@/components/layout/Navbar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Quote, Heart, Calendar } from "lucide-react";
 import Image from "next/image";
+import { useAuth, useUser } from "@/firebase";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const stories = [
   {
@@ -33,6 +39,28 @@ const stories = [
 ];
 
 export default function SuccessStoriesPage() {
+  const auth = useAuth();
+  const { user } = useUser();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleStartJourney = async () => {
+    if (user) {
+      router.push("/matches");
+      return;
+    }
+    
+    if (!auth) return;
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({ title: "Welcome!", description: "Start your search for a God-ordained partner." });
+      router.push("/matches");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login failed", description: error.message });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/20">
       <Navbar />
@@ -90,7 +118,7 @@ export default function SuccessStoriesPage() {
           <p className="text-lg opacity-80 max-w-xl mx-auto">
             Your story is waiting to be written. Join our community of intentional Christian singles today.
           </p>
-          <Button size="lg" className="h-14 px-12 rounded-full font-bold bg-white text-primary hover:bg-white/90 shadow-2xl">
+          <Button size="lg" className="h-14 px-12 rounded-full font-bold bg-white text-primary hover:bg-white/90 shadow-2xl" onClick={handleStartJourney}>
             Start Your Journey
           </Button>
         </div>

@@ -29,7 +29,7 @@ export function Navbar() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast({ title: "Welcome back!", description: "Successfully logged in." });
+      toast({ title: "Welcome back!", description: "Successfully logged in with Google." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login failed", description: error.message });
     }
@@ -91,7 +91,7 @@ export function Navbar() {
                 Login
               </Button>
               <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90" onClick={handleLogin}>
-                Sign Up Free
+                Sign Up
               </Button>
             </>
           )}
