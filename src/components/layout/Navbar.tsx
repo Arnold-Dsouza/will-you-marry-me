@@ -1,11 +1,10 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
+import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut, LogIn } from "lucide-react";
 import { useAuth, useUser } from "@/firebase";
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -75,25 +74,26 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           {user ? (
-            <>
+            <div className="flex items-center gap-2">
               <Link href="/profile">
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
-                  <User className="w-5 h-5" />
+                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold">
+                  <User className="w-4 h-4" />
+                  <span className="hidden md:inline">{user.displayName?.split(' ')[0]}</span>
                 </Button>
               </Link>
               <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={handleLogout}>
                 <LogOut className="w-5 h-5" />
               </Button>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold hidden sm:flex" onClick={handleLogin}>
                 Login
               </Button>
               <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90" onClick={handleLogin}>
                 Sign Up
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

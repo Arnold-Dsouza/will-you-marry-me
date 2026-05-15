@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -28,8 +28,19 @@ export default function Home() {
   const { user } = useUser();
   const { toast } = useToast();
 
+  const [searchParams, setSearchParams] = useState({
+    gender: "bride",
+    ageFrom: "22",
+    ageTo: "30",
+    denomination: "any",
+    location: ""
+  });
+
   const handleLogin = async () => {
-    if (!auth) return;
+    if (!auth) {
+      toast({ variant: "destructive", title: "Configuration Error", description: "Firebase is not initialized." });
+      return;
+    }
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
@@ -40,7 +51,8 @@ export default function Home() {
   };
 
   const handleSearch = () => {
-    router.push("/matches");
+    const params = new URLSearchParams(searchParams);
+    router.push(`/matches?${params.toString()}`);
   };
 
   return (
@@ -77,7 +89,10 @@ export default function Home() {
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-2">Looking for</label>
-                  <Select defaultValue="bride">
+                  <Select 
+                    value={searchParams.gender} 
+                    onValueChange={(val) => setSearchParams(p => ({ ...p, gender: val }))}
+                  >
                     <SelectTrigger className="h-12 rounded-full bg-white border-muted">
                       <SelectValue placeholder="Gender" />
                     </SelectTrigger>
@@ -91,7 +106,10 @@ export default function Home() {
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-2">Age</label>
                   <div className="flex items-center gap-2">
-                    <Select defaultValue="22">
+                    <Select 
+                      value={searchParams.ageFrom} 
+                      onValueChange={(val) => setSearchParams(p => ({ ...p, ageFrom: val }))}
+                    >
                       <SelectTrigger className="h-12 rounded-full bg-white border-muted">
                         <SelectValue placeholder="From" />
                       </SelectTrigger>
@@ -102,7 +120,10 @@ export default function Home() {
                       </SelectContent>
                     </Select>
                     <span className="text-muted-foreground">to</span>
-                    <Select defaultValue="30">
+                    <Select 
+                      value={searchParams.ageTo} 
+                      onValueChange={(val) => setSearchParams(p => ({ ...p, ageTo: val }))}
+                    >
                       <SelectTrigger className="h-12 rounded-full bg-white border-muted">
                         <SelectValue placeholder="To" />
                       </SelectTrigger>
@@ -117,24 +138,32 @@ export default function Home() {
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-2">Denomination</label>
-                  <Select defaultValue="any">
+                  <Select 
+                    value={searchParams.denomination} 
+                    onValueChange={(val) => setSearchParams(p => ({ ...p, denomination: val }))}
+                  >
                     <SelectTrigger className="h-12 rounded-full bg-white border-muted">
                       <SelectValue placeholder="Religion" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any Denomination</SelectItem>
-                      <SelectItem value="catholic">Catholic</SelectItem>
-                      <SelectItem value="baptist">Baptist</SelectItem>
-                      <SelectItem value="pentecostal">Pentecostal</SelectItem>
-                      <SelectItem value="orthodox">Orthodox</SelectItem>
-                      <SelectItem value="anglican">Anglican</SelectItem>
+                      <SelectItem value="Catholic">Catholic</SelectItem>
+                      <SelectItem value="Baptist">Baptist</SelectItem>
+                      <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                      <SelectItem value="Orthodox">Orthodox</SelectItem>
+                      <SelectItem value="Anglican">Anglican</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-2">Location</label>
-                  <Input className="h-12 rounded-full bg-white border-muted" placeholder="City or Country" />
+                  <Input 
+                    className="h-12 rounded-full bg-white border-muted" 
+                    placeholder="City or Country" 
+                    value={searchParams.location}
+                    onChange={(e) => setSearchParams(p => ({ ...p, location: e.target.value }))}
+                  />
                 </div>
 
                 <Button size="lg" className="h-12 rounded-full font-bold shadow-lg hover:shadow-xl transition-all" onClick={handleSearch}>

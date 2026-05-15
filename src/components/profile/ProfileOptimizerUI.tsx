@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -77,12 +76,12 @@ export function ProfileOptimizerUI() {
       setResult(output);
       toast({
         title: "Profile Optimized!",
-        description: "Your bio has been updated with faith-filled insights.",
+        description: "Your bio has been refreshed with spiritual insights.",
       });
     } catch (error) {
       toast({
         title: "Optimization Failed",
-        description: "Something went wrong while optimizing your profile.",
+        description: "AI service is temporarily unavailable.",
         variant: "destructive"
       });
     } finally {
@@ -99,16 +98,19 @@ export function ProfileOptimizerUI() {
     setSaving(true);
     try {
       const updatedData = {
-        ...formData,
-        bio: bioToSave || formData.rawBio,
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
+        photoURL: user.photoURL,
+        bio: bioToSave || formData.rawBio,
+        faithDetails: formData.faithDetails,
+        personalityTraits: formData.personalityTraits,
+        targetAudienceDescription: formData.targetAudienceDescription,
         updatedAt: new Date().toISOString()
       };
       
       await setDoc(doc(db, "users", user.uid), updatedData, { merge: true });
-      toast({ title: "Profile Saved", description: "Your spiritual identity is now updated." });
+      toast({ title: "Profile Saved", description: "Your spiritual identity has been updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Save failed", description: error.message });
     } finally {
@@ -122,10 +124,10 @@ export function ProfileOptimizerUI() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-accent" />
-            AI Bio Assistant
+            Bio Assistant
           </CardTitle>
           <CardDescription>
-            Help our AI understand your heart, and we'll craft a bio that resonates.
+            Express your heart, and our AI will help you craft a bio that resonates with intentional partners.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -133,7 +135,7 @@ export function ProfileOptimizerUI() {
             <Label htmlFor="rawBio">Your Current Bio / Draft</Label>
             <Textarea
               id="rawBio"
-              placeholder="Tell us a bit about yourself in your own words..."
+              placeholder="Tell us about yourself..."
               className="min-h-[120px] rounded-xl"
               value={formData.rawBio}
               onChange={(e) => setFormData(prev => ({ ...prev, rawBio: e.target.value }))}
@@ -141,10 +143,10 @@ export function ProfileOptimizerUI() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="faithDetails">Faith Journey & Church Involvement</Label>
+            <Label htmlFor="faithDetails">Faith Journey</Label>
             <Textarea
               id="faithDetails"
-              placeholder="E.g. I grew up in a Presbyterian church, currently serve in the worship team..."
+              placeholder="Church involvement, ministry, spiritual growth..."
               className="min-h-[100px] rounded-xl"
               value={formData.faithDetails}
               onChange={(e) => setFormData(prev => ({ ...prev, faithDetails: e.target.value }))}
@@ -152,7 +154,7 @@ export function ProfileOptimizerUI() {
           </div>
 
           <div className="space-y-2">
-            <Label>Personality Traits</Label>
+            <Label>Traits & Values</Label>
             <div className="flex gap-2 mb-2 flex-wrap">
               {formData.personalityTraits.map(trait => (
                 <Badge key={trait} variant="secondary" className="px-3 py-1 flex items-center gap-1">
@@ -164,7 +166,7 @@ export function ProfileOptimizerUI() {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Add trait (e.g. Adventurous)"
+                placeholder="Add trait"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={traitInput}
                 onChange={(e) => setTraitInput(e.target.value)}
@@ -182,7 +184,7 @@ export function ProfileOptimizerUI() {
               disabled={saving}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Draft
+              Save
             </Button>
             <Button 
               className="h-12 rounded-xl font-bold" 
@@ -190,7 +192,7 @@ export function ProfileOptimizerUI() {
               disabled={loading}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              AI Optimize
+              Optimize
             </Button>
           </div>
         </CardContent>
@@ -203,7 +205,7 @@ export function ProfileOptimizerUI() {
               <CardHeader className="bg-accent/10 border-b border-accent/10">
                 <CardTitle className="text-xl font-headline text-accent flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5" />
-                  Your Optimized Bio
+                  AI Suggested Bio
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -213,7 +215,7 @@ export function ProfileOptimizerUI() {
                 <div className="mt-6 flex justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => {
                     navigator.clipboard.writeText(result.optimizedBio);
-                    toast({ title: "Copied to clipboard" });
+                    toast({ title: "Copied" });
                   }}>
                     Copy
                   </Button>
@@ -226,10 +228,7 @@ export function ProfileOptimizerUI() {
 
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-headline flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-primary" />
-                  Suggestions for Improvement
-                </CardTitle>
+                <CardTitle className="text-lg font-headline">Spiritual Suggestions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {result.improvementSuggestions.map((suggestion, idx) => (
@@ -246,8 +245,8 @@ export function ProfileOptimizerUI() {
         ) : (
           <div className="h-full min-h-[400px] border-2 border-dashed rounded-3xl flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-muted/10">
             <Sparkles className="w-16 h-16 opacity-20 mb-4" />
-            <p className="text-xl font-headline">Fill out the form to see the magic</p>
-            <p className="max-w-xs text-sm">Your faith-first bio will appear here after optimization.</p>
+            <p className="text-xl font-headline">AI Bio Preview</p>
+            <p className="max-w-xs text-sm">Your optimized bio will appear here.</p>
           </div>
         )}
       </div>
