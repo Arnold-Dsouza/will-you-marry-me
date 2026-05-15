@@ -1,4 +1,6 @@
 
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -14,9 +16,15 @@ import {
 } from "@/components/ui/select";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Heart, Sparkles, ShieldCheck, Users, Quote, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-couple");
+  const router = useRouter();
+
+  const handleSearch = () => {
+    router.push("/matches");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -112,7 +120,7 @@ export default function Home() {
                   <Input className="h-12 rounded-full bg-white border-muted" placeholder="City or Country" />
                 </div>
 
-                <Button size="lg" className="h-12 rounded-full font-bold shadow-lg hover:shadow-xl transition-all">
+                <Button size="lg" className="h-12 rounded-full font-bold shadow-lg hover:shadow-xl transition-all" onClick={handleSearch}>
                   Search Now
                 </Button>
               </CardContent>
