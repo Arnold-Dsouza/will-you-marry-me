@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut, LogIn } from "lucide-react";
+import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
 import { useAuth, useUser } from "@/firebase";
-import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
@@ -23,21 +23,14 @@ export function Navbar() {
   const auth = useAuth();
   const { toast } = useToast();
 
-  const handleLogin = async () => {
-    if (!auth) return;
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      toast({ title: "Welcome back!", description: "Successfully logged in with Google." });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Login failed", description: error.message });
-    }
-  };
-
   const handleLogout = async () => {
     if (!auth) return;
-    await signOut(auth);
-    toast({ title: "Logged out", description: "Come back soon!" });
+    try {
+      await signOut(auth);
+      toast({ title: "Logged out", description: "Come back soon!" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Logout failed", description: error.message });
+    }
   };
 
   return (
@@ -78,7 +71,7 @@ export function Navbar() {
               <Link href="/profile">
                 <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold">
                   <User className="w-4 h-4" />
-                  <span className="hidden md:inline">{user.displayName?.split(' ')[0]}</span>
+                  <span className="hidden md:inline">{user.displayName?.split(' ')[0] || "Profile"}</span>
                 </Button>
               </Link>
               <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={handleLogout}>
@@ -87,12 +80,16 @@ export function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold hidden sm:flex" onClick={handleLogin}>
-                Login
-              </Button>
-              <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90" onClick={handleLogin}>
-                Sign Up
-              </Button>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold hidden sm:flex">
+                  Login
+                </Button>
+              </Link>
+              <Link href="/login?mode=signup">
+                <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
           )}
         </div>
