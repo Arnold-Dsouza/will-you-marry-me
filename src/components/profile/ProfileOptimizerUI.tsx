@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, CheckCircle2, Save, User, MapPin, Church, Briefcase, GraduationCap, Ruler, Heart, Star } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle2, Save, User, MapPin, Church, Briefcase, GraduationCap, Ruler, Heart, Star, Baby, UserCircle, Globe, Wallet, Users, Coffee, Utensils } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
@@ -39,12 +39,25 @@ export function ProfileOptimizerUI() {
     photoURL: "",
     age: "",
     gender: "bride",
-    denomination: "any",
-    occupation: "",
-    education: "",
+    profileCreatedBy: "Self",
+    maritalStatus: "Never Married",
+    motherTongue: "",
     height: "",
+    physicalStatus: "Normal",
+    denomination: "any",
+    diocese: "",
+    parish: "",
+    education: "",
+    employedIn: "Private",
+    occupation: "",
+    annualIncome: "",
     location: "",
-    maritalStatus: "never_married",
+    familyValue: "Moderate",
+    familyType: "Nuclear",
+    familyStatus: "Middle Class",
+    eatingHabits: "Non-Vegetarian",
+    drinkingHabits: "No",
+    smokingHabits: "No",
     rawBio: "",
     faithDetails: "",
     personalityTraits: [] as string[],
@@ -58,12 +71,25 @@ export function ProfileOptimizerUI() {
         photoURL: profile.photoURL || user?.photoURL || "",
         age: profile.age?.toString() || "",
         gender: profile.gender || "bride",
-        denomination: profile.denomination || "any",
-        occupation: profile.occupation || "",
-        education: profile.education || "",
+        profileCreatedBy: profile.profileCreatedBy || "Self",
+        maritalStatus: profile.maritalStatus || "Never Married",
+        motherTongue: profile.motherTongue || "",
         height: profile.height || "",
+        physicalStatus: profile.physicalStatus || "Normal",
+        denomination: profile.denomination || "any",
+        diocese: profile.diocese || "",
+        parish: profile.parish || "",
+        education: profile.education || "",
+        employedIn: profile.employedIn || "Private",
+        occupation: profile.occupation || "",
+        annualIncome: profile.annualIncome || "",
         location: profile.location || "",
-        maritalStatus: profile.maritalStatus || "never_married",
+        familyValue: profile.familyValue || "Moderate",
+        familyType: profile.familyType || "Nuclear",
+        familyStatus: profile.familyStatus || "Middle Class",
+        eatingHabits: profile.eatingHabits || "Non-Vegetarian",
+        drinkingHabits: profile.drinkingHabits || "No",
+        smokingHabits: profile.smokingHabits || "No",
         rawBio: profile.bio || "",
         faithDetails: profile.faithDetails || "",
         personalityTraits: profile.personalityTraits || [],
@@ -73,9 +99,9 @@ export function ProfileOptimizerUI() {
   }, [profile, user]);
 
   const completion = useMemo(() => {
-    const fields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'photoURL', 'faithDetails'];
-    const filled = fields.filter(f => formData[f as keyof typeof formData] && formData[f as keyof typeof formData] !== "" && formData[f as keyof typeof formData] !== "any");
-    return Math.round((filled.length / fields.length) * 100);
+    const criticalFields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'photoURL', 'faithDetails', 'maritalStatus', 'motherTongue'];
+    const filled = criticalFields.filter(f => formData[f as keyof typeof formData] && formData[f as keyof typeof formData] !== "" && formData[f as keyof typeof formData] !== "any");
+    return Math.round((filled.length / criticalFields.length) * 100);
   }, [formData]);
 
   const [traitInput, setTraitInput] = useState("");
@@ -176,28 +202,21 @@ export function ProfileOptimizerUI() {
            <div className="flex-grow space-y-4">
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
-                 <h2 className="text-2xl font-headline font-bold">Profile Strength</h2>
-                 <p className="text-muted-foreground text-sm">Fill in your spiritual story to attract intentional matches.</p>
+                 <h2 className="text-2xl font-headline font-bold">Spiritual Maturity Progress</h2>
+                 <p className="text-muted-foreground text-sm">Detailed profiles are essential for God-ordained matchmaking.</p>
                </div>
                <Badge className={`${completion === 100 ? 'bg-green-500' : 'bg-primary'} text-white px-4 py-1.5 rounded-full font-bold`}>
-                 {completion === 100 ? 'Match Ready' : 'In Progress'}
+                 {completion === 100 ? 'Fully Intentional' : 'Nurturing Profile'}
                </Badge>
              </div>
              <Progress value={completion} className="h-3 bg-muted" />
-             <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-wider text-muted-foreground opacity-60">
-                <span className={formData.displayName ? "text-green-500" : ""}>• Name</span>
-                <span className={formData.photoURL ? "text-green-500" : ""}>• Photo</span>
-                <span className={formData.rawBio ? "text-green-500" : ""}>• Bio</span>
-                <span className={formData.faithDetails ? "text-green-500" : ""}>• Faith Journey</span>
-                <span className={formData.location ? "text-green-500" : ""}>• Location</span>
-             </div>
            </div>
         </CardContent>
       </Card>
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column: Basic Info */}
         <div className="lg:col-span-2 space-y-8">
+          {/* 1. Basic Details */}
           <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
             <CardHeader className="bg-primary/5 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
@@ -215,175 +234,228 @@ export function ProfileOptimizerUI() {
                 </div>
                 <div className="flex-grow space-y-2 text-center md:text-left">
                   <CardTitle className="text-3xl font-headline font-bold">Basic Information</CardTitle>
-                  <CardDescription>These details help us find the most compatible matches for your journey.</CardDescription>
+                  <CardDescription>Core identity details for matrimonial intent.</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Display Name</Label>
-                  <Input 
-                    placeholder="Full Name" 
-                    value={formData.displayName} 
-                    onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Profile Photo URL</Label>
-                  <Input 
-                    placeholder="https://..." 
-                    value={formData.photoURL} 
-                    onChange={(e) => setFormData(p => ({ ...p, photoURL: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Age</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="25" 
-                    value={formData.age} 
-                    onChange={(e) => setFormData(p => ({ ...p, age: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Gender / Identity</Label>
-                  <Select value={formData.gender} onValueChange={(val) => setFormData(p => ({ ...p, gender: val }))}>
-                    <SelectTrigger className="rounded-xl h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bride">Seeking a Groom (I am a Bride)</SelectItem>
-                      <SelectItem value="groom">Seeking a Bride (I am a Groom)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> Location</Label>
-                  <Input 
-                    placeholder="City, State, Country" 
-                    value={formData.location} 
-                    onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><Church className="w-4 h-4 text-primary" /> Denomination</Label>
-                  <Select value={formData.denomination} onValueChange={(val) => setFormData(p => ({ ...p, denomination: val }))}>
-                    <SelectTrigger className="rounded-xl h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Interdenominational</SelectItem>
-                      <SelectItem value="Catholic">Catholic</SelectItem>
-                      <SelectItem value="Baptist">Baptist</SelectItem>
-                      <SelectItem value="Pentecostal">Pentecostal</SelectItem>
-                      <SelectItem value="Anglican">Anglican</SelectItem>
-                      <SelectItem value="Orthodox">Orthodox</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-primary" /> Occupation</Label>
-                  <Input 
-                    placeholder="Software Engineer" 
-                    value={formData.occupation} 
-                    onChange={(e) => setFormData(p => ({ ...p, occupation: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-primary" /> Education</Label>
-                  <Input 
-                    placeholder="Master's Degree" 
-                    value={formData.education} 
-                    onChange={(e) => setFormData(p => ({ ...p, education: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><Ruler className="w-4 h-4 text-primary" /> Height</Label>
-                  <Input 
-                    placeholder="e.g. 5 ft 10 in" 
-                    value={formData.height} 
-                    onChange={(e) => setFormData(p => ({ ...p, height: e.target.value }))}
-                    className="rounded-xl h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><Heart className="w-4 h-4 text-primary" /> Marital Status</Label>
-                  <Select value={formData.maritalStatus} onValueChange={(val) => setFormData(p => ({ ...p, maritalStatus: val }))}>
-                    <SelectTrigger className="rounded-xl h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="never_married">Never Married</SelectItem>
-                      <SelectItem value="widowed">Widowed</SelectItem>
-                      <SelectItem value="divorced">Divorced (Annuled)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><UserCircle className="w-4 h-4 text-primary" /> Profile Created By</Label>
+                <Select value={formData.profileCreatedBy} onValueChange={(val) => setFormData(p => ({ ...p, profileCreatedBy: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Self", "Parents", "Sibling", "Relative", "Friend"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-
-              <div className="space-y-4 pt-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-lg font-headline font-bold">Personal Traits & Values</Label>
-                  <span className="text-xs text-muted-foreground">{formData.personalityTraits.length} selected</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.personalityTraits.map(trait => (
-                    <Badge key={trait} variant="secondary" className="px-4 py-2 text-sm rounded-full bg-accent/10 text-accent hover:bg-accent/20 border-none transition-all group">
-                      {trait}
-                      <button onClick={() => handleRemoveTrait(trait)} className="ml-2 opacity-50 group-hover:opacity-100 transition-opacity">×</button>
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a trait (e.g. Prayerful, Adventurous, Family-oriented)"
-                    value={traitInput}
-                    onChange={(e) => setTraitInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTrait())}
-                    className="rounded-xl h-12"
-                  />
-                  <Button onClick={handleAddTrait} variant="outline" className="rounded-xl h-12 px-6">Add</Button>
-                </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">Full Name</Label>
+                <Input value={formData.displayName} onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">Gender</Label>
+                <Select value={formData.gender} onValueChange={(val) => setFormData(p => ({ ...p, gender: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bride">Bride</SelectItem>
+                    <SelectItem value="groom">Groom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">Age</Label>
+                <Input type="number" value={formData.age} onChange={(e) => setFormData(p => ({ ...p, age: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Heart className="w-4 h-4 text-primary" /> Marital Status</Label>
+                <Select value={formData.maritalStatus} onValueChange={(val) => setFormData(p => ({ ...p, maritalStatus: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Never Married", "Widowed", "Divorced", "Awaiting Divorce"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Mother Tongue</Label>
+                <Input placeholder="e.g. English, Spanish, Malayalam" value={formData.motherTongue} onChange={(e) => setFormData(p => ({ ...p, motherTongue: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Ruler className="w-4 h-4 text-primary" /> Height</Label>
+                <Input placeholder="e.g. 5 ft 10 in" value={formData.height} onChange={(e) => setFormData(p => ({ ...p, height: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">Physical Status</Label>
+                <Select value={formData.physicalStatus} onValueChange={(val) => setFormData(p => ({ ...p, physicalStatus: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Physically Challenged">Physically Challenged</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
 
+          {/* 2. Religious Information */}
           <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
             <CardHeader>
-              <CardTitle className="text-2xl font-headline font-bold">Your Spiritual Story</CardTitle>
-              <CardDescription>Tell us about your walk with God and what you seek in a partner.</CardDescription>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Church className="w-6 h-6 text-primary" /> Religious Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Faith Journey & Church Involvement</Label>
-                <Textarea
-                  placeholder="Describe your relationship with Christ, your church home, and any ministries you're involved in..."
-                  className="min-h-[150px] rounded-2xl p-4 bg-muted/20 border-none resize-none"
-                  value={formData.faithDetails}
-                  onChange={(e) => setFormData(prev => ({ ...prev, faithDetails: e.target.value }))}
-                />
+                <Label>Denomination</Label>
+                <Select value={formData.denomination} onValueChange={(val) => setFormData(p => ({ ...p, denomination: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Interdenominational</SelectItem>
+                    <SelectItem value="Catholic">Catholic</SelectItem>
+                    <SelectItem value="Baptist">Baptist</SelectItem>
+                    <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                    <SelectItem value="Anglican">Anglican</SelectItem>
+                    <SelectItem value="Orthodox">Orthodox</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Who are you looking for?</Label>
-                <Textarea
-                  placeholder="What qualities and values are non-negotiable for you in a spouse?"
-                  className="min-h-[120px] rounded-2xl p-4 bg-muted/20 border-none resize-none"
-                  value={formData.targetAudienceDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, targetAudienceDescription: e.target.value }))}
-                />
+                <Label>Diocese</Label>
+                <Input value={formData.diocese} onChange={(e) => setFormData(p => ({ ...p, diocese: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Parish / Church Home</Label>
+                <Input value={formData.parish} onChange={(e) => setFormData(p => ({ ...p, parish: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Professional Information */}
+          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Briefcase className="w-6 h-6 text-primary" /> Professional Information</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-primary" /> Education</Label>
+                <Input value={formData.education} onChange={(e) => setFormData(p => ({ ...p, education: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Employed In</Label>
+                <Select value={formData.employedIn} onValueChange={(val) => setFormData(p => ({ ...p, employedIn: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Private", "Government", "Business", "Defense", "Self Employed", "Not Employed"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Occupation</Label>
+                <Input value={formData.occupation} onChange={(e) => setFormData(p => ({ ...p, occupation: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /> Annual Income</Label>
+                <Input value={formData.annualIncome} onChange={(e) => setFormData(p => ({ ...p, annualIncome: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 4. Family Details */}
+          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Family Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Family Value</Label>
+                <Select value={formData.familyValue} onValueChange={(val) => setFormData(p => ({ ...p, familyValue: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Traditional", "Moderate", "Liberal"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Family Type</Label>
+                <Select value={formData.familyType} onValueChange={(val) => setFormData(p => ({ ...p, familyType: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Joint">Joint</SelectItem>
+                    <SelectItem value="Nuclear">Nuclear</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Family Status</Label>
+                <Select value={formData.familyStatus} onValueChange={(val) => setFormData(p => ({ ...p, familyStatus: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Middle Class", "Upper Middle Class", "Rich / Affluent"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 5. Lifestyle */}
+          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2">Lifestyle Habits</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Utensils className="w-4 h-4 text-primary" /> Eating Habits</Label>
+                <Select value={formData.eatingHabits} onValueChange={(val) => setFormData(p => ({ ...p, eatingHabits: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Vegetarian", "Non-Vegetarian", "Eggetarian"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><Coffee className="w-4 h-4 text-primary" /> Drinking Habits</Label>
+                <Select value={formData.drinkingHabits} onValueChange={(val) => setFormData(p => ({ ...p, drinkingHabits: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["No", "Drinks Socially", "Yes"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Smoking Habits</Label>
+                <Select value={formData.smokingHabits} onValueChange={(val) => setFormData(p => ({ ...p, smokingHabits: val }))}>
+                  <SelectTrigger className="rounded-xl h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["No", "Occasionally", "Yes"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column: AI Bio Assistant */}
+        {/* Right Column: AI Assistant & Bio */}
         <div className="space-y-8 sticky top-24">
           <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
             <div className="h-2 bg-gradient-to-r from-primary to-accent" />
@@ -392,36 +464,23 @@ export function ProfileOptimizerUI() {
                 <Sparkles className="w-5 h-5 text-accent animate-pulse" />
                 AI Bio Assistant
               </CardTitle>
-              <CardDescription>
-                Draft your bio below, and our AI will polish it to reflect your heart and faith.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Current Bio Draft</Label>
+                <Label>Your Spiritual Story</Label>
                 <Textarea
-                  placeholder="Type your current bio or a rough draft here..."
+                  placeholder="Draft your bio here..."
                   className="min-h-[150px] rounded-2xl p-4 bg-muted/20 border-none resize-none"
                   value={formData.rawBio}
                   onChange={(e) => setFormData(prev => ({ ...prev, rawBio: e.target.value }))}
                 />
               </div>
-              
               <div className="flex gap-4">
-                <Button 
-                  variant="outline"
-                  className="flex-1 h-12 rounded-xl font-bold border-primary text-primary hover:bg-primary/5"
-                  onClick={() => handleSaveProfile()}
-                  disabled={saving}
-                >
+                <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => handleSaveProfile()} disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                   Save
                 </Button>
-                <Button 
-                  className="flex-1 h-12 rounded-xl font-bold shadow-lg" 
-                  onClick={handleOptimize}
-                  disabled={loading}
-                >
+                <Button className="flex-1 h-12 rounded-xl" onClick={handleOptimize} disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                   Optimize
                 </Button>
@@ -429,54 +488,17 @@ export function ProfileOptimizerUI() {
             </CardContent>
           </Card>
 
-          {result ? (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
-              <Card className="border-2 border-accent/20 bg-accent/5 shadow-none overflow-hidden rounded-[2.5rem]">
-                <CardHeader className="bg-accent/10 border-b border-accent/10">
-                  <CardTitle className="text-lg font-headline text-accent flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" />
-                    Suggested Bio
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <p className="text-sm leading-relaxed text-foreground italic whitespace-pre-wrap font-body">
-                    "{result.optimizedBio}"
-                  </p>
-                  <div className="mt-6 flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" className="rounded-full text-accent hover:bg-accent/10" onClick={() => {
-                      navigator.clipboard.writeText(result.optimizedBio);
-                      toast({ title: "Copied to clipboard" });
-                    }}>
-                      Copy
-                    </Button>
-                    <Button size="sm" className="rounded-full bg-accent hover:bg-accent/90" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
-                      {saving ? "Saving..." : "Apply this Bio"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-sm rounded-[2rem]">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Improvement Tips</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {result.improvementSuggestions.map((suggestion, idx) => (
-                    <div key={idx} className="flex gap-3 p-3 rounded-xl bg-muted/40 text-xs">
-                      <div className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 font-bold">
-                        {idx + 1}
-                      </div>
-                      {suggestion}
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="h-40 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-muted/10">
-              <Sparkles className="w-8 h-8 opacity-20 mb-2" />
-              <p className="text-sm font-bold uppercase tracking-widest opacity-40">AI Preview Ready</p>
-            </div>
+          {result && (
+            <Card className="border-2 border-accent/20 bg-accent/5 rounded-[2.5rem]">
+              <CardContent className="p-6">
+                <p className="text-sm italic font-body">"{result.optimizedBio}"</p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button size="sm" className="rounded-full bg-accent" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
+                    Apply this Bio
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
