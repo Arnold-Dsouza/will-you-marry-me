@@ -265,7 +265,7 @@ export function ProfileOptimizerUI() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Ruler className="w-4 h-4 text-primary" /> Height</Label>
                 <Input 
-                  placeholder="5'10\"" 
+                  placeholder="5 ft 10 in" 
                   value={formData.height} 
                   onChange={(e) => setFormData(p => ({ ...p, height: e.target.value }))}
                   className="rounded-xl h-12"
