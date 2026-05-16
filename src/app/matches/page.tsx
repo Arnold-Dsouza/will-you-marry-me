@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, UserCheck, Heart } from "lucide-react";
+import { MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, Heart } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where } from "firebase/firestore";
@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function MatchesPage() {
+function MatchesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -286,7 +286,6 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
           alt={match.displayName || "Member"}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-700"
-          data-ai-hint="member portrait"
         />
         <div className="absolute top-4 right-4">
           <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary">
@@ -339,5 +338,13 @@ function EmptyState({ title, description }: any) {
       <h3 className="text-xl font-headline font-bold">{title}</h3>
       <p className="text-muted-foreground max-w-sm mx-auto text-sm">{description}</p>
     </div>
+  );
+}
+
+export default function MatchesPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>}>
+      <MatchesContent />
+    </Suspense>
   );
 }

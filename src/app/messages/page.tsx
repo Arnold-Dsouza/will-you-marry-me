@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,10 @@ import { useUser, useFirestore, useCollection, useDoc } from "@/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, where, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
@@ -32,8 +35,6 @@ export default function MessagesPage() {
   // Fetch messages for the active conversation
   const messagesQuery = useMemo(() => {
     if (!db || !user || !activeUserId) return null;
-    // For MVP, we query all messages and filter. 
-    // In production, you'd use a composite query or a chat-rooms subcollection.
     return query(
       collection(db, "messages"), 
       orderBy("timestamp", "asc")
@@ -135,7 +136,7 @@ export default function MessagesPage() {
               {/* Chat Header */}
               <div className="p-6 border-b flex items-center justify-between bg-white/50 backdrop-blur-md">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary overflow-hidden">
+                  <div className="relative w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary overflow-hidden">
                     {activeUser?.photoURL ? <Image src={activeUser.photoURL} alt="" fill className="object-cover" /> : (activeUser?.displayName?.charAt(0) || "U")}
                   </div>
                   <div>
@@ -215,5 +216,13 @@ export default function MessagesPage() {
         </Card>
       </main>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>}>
+      <MessagesContent />
+    </Suspense>
   );
 }
