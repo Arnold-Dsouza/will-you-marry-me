@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { MapPin, Church, Briefcase, Loader2, MessageCircle, ArrowRight, Sparkles, Heart } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
+import { collection, query, where, doc, addDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -97,15 +97,13 @@ function MatchesContent() {
     }).filter(Boolean);
   }, [receivedInterests, allUsers]);
 
-  const handleExpressInterest = async (match: any) => {
+  const handleExpressInterest = (match: any) => {
     if (!user) {
       toast({ title: "Login required", description: "Please sign in to express interest.", variant: "destructive" });
       return;
     }
     if (!db) return;
 
-    // Use Firestore SDK correctly without await as per guidelines
-    const interestsRef = collection(db, "interests");
     const interestData = {
       senderId: user.uid,
       senderName: user.displayName || "A Member",
@@ -114,14 +112,16 @@ function MatchesContent() {
       status: "pending"
     };
 
-    import("firebase/firestore").then(({ addDoc }) => {
-      addDoc(interestsRef, interestData).then(() => {
+    addDoc(collection(db, "interests"), interestData)
+      .then(() => {
         toast({
           title: "Interest Expressed!",
           description: `We've notified ${match.displayName || 'this member'} of your interest.`,
         });
+      })
+      .catch((e) => {
+        toast({ variant: "destructive", title: "Operation failed", description: "Could not express interest." });
       });
-    });
   };
 
   const handleStartChat = (match: any) => {
@@ -171,7 +171,7 @@ function MatchesContent() {
               <TabsTrigger value="received" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white relative">
                 Interests Received
                 {peopleWhoLikedMe.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] text-white">
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-lg animate-bounce">
                     {peopleWhoLikedMe.length}
                   </span>
                 )}
@@ -304,11 +304,11 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
 
         <div className="pt-2 flex gap-2">
           {isInterest ? (
-            <Button className="flex-grow rounded-xl bg-accent hover:bg-accent/90 shadow-md" onClick={onMessage}>
+            <Button className="flex-grow rounded-xl bg-accent hover:bg-accent/90 shadow-md font-bold" onClick={onMessage}>
               <MessageCircle className="w-4 h-4 mr-2" /> Message Back
             </Button>
           ) : (
-            <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md" onClick={onInterest}>
+            <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md font-bold" onClick={onInterest}>
               Express Interest
             </Button>
           )}

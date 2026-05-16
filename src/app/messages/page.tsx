@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Send, Phone, Video, MoreHorizontal, Loader2, MessageSquare } from "lucide-react";
-import { useUser, useFirestore, useCollection, useDoc } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, orderBy, where, doc } from "firebase/firestore";
+import { useUser, useFirestore, useCollection } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -21,9 +21,16 @@ function MessagesContent() {
   const searchParams = useSearchParams();
   const initialUserId = searchParams.get("userId");
 
-  const [activeUserId, setActiveUserId] = useState<string | null>(initialUserId);
+  const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  // Set active user from URL if provided
+  useEffect(() => {
+    if (initialUserId) {
+      setActiveUserId(initialUserId);
+    }
+  }, [initialUserId]);
 
   // Fetch all users to build the conversation list
   const usersQuery = useMemo(() => {
@@ -32,14 +39,14 @@ function MessagesContent() {
   }, [db]);
   const { data: allUsers } = useCollection(usersQuery);
 
-  // Fetch messages for the active conversation
+  // Fetch all messages (client-side filter for simplicity in prototype)
   const messagesQuery = useMemo(() => {
-    if (!db || !user || !activeUserId) return null;
+    if (!db || !user) return null;
     return query(
       collection(db, "messages"), 
       orderBy("timestamp", "asc")
     );
-  }, [db, user, activeUserId]);
+  }, [db, user]);
 
   const { data: rawMessages, loading: messagesLoading } = useCollection(messagesQuery);
 
@@ -63,13 +70,14 @@ function MessagesContent() {
     setIsSending(true);
     addDoc(collection(db, "messages"), {
       senderId: user.uid,
-      senderName: user.displayName,
+      senderName: user.displayName || "Member",
       receiverId: activeUserId,
       text: newMessage,
       timestamp: serverTimestamp(),
     }).then(() => {
       setNewMessage("");
-    }).catch(() => {
+    }).catch((e) => {
+      console.error(e);
       toast({ title: "Failed to send", variant: "destructive" });
     }).finally(() => {
       setIsSending(false);
@@ -183,7 +191,7 @@ function MessagesContent() {
                 ) : (
                   <div className="text-center py-20 text-muted-foreground space-y-4">
                     <MessageSquare className="w-12 h-12 mx-auto opacity-20" />
-                    <p className="text-sm italic">"Let your speech always be with grace, seasoned with salt..."<br />(Colossians 4:6)</p>
+                    <p className="text-sm italic">"Let your speech always be with grace..."</p>
                   </div>
                 )}
               </div>
