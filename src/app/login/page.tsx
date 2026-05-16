@@ -41,7 +41,7 @@ function LoginContent() {
   useEffect(() => {
     // Only redirect if logged in and we didn't JUST sign up
     if (user && !authLoading && !justSignedUp) {
-      router.push("/profile");
+      router.push("/");
     }
   }, [user, authLoading, router, justSignedUp]);
 
@@ -88,7 +88,7 @@ function LoginContent() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome back!", description: "Logged in successfully." });
-        router.push("/profile");
+        router.push("/");
       }
     } catch (error: any) {
       setJustSignedUp(false);
@@ -116,7 +116,7 @@ function LoginContent() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/profile");
+      router.push("/");
     } catch (error: any) {
       toast({ 
         variant: "destructive", 

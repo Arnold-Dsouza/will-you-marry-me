@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -73,7 +72,7 @@ export default function PricingPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       toast({ title: "Welcome!", description: "Successfully signed in with Google." });
-      router.push("/profile");
+      router.push("/");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login failed", description: error.message });
     }
