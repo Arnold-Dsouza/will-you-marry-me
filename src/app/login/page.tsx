@@ -17,7 +17,7 @@ import {
   updateProfile 
 } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Mail, Lock, Loader2, ArrowRight, User } from "lucide-react";
+import { Heart, Mail, Lock, Loader2, ArrowRight, User, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 
 function LoginContent() {
@@ -36,7 +36,11 @@ function LoginContent() {
   // Sync state with URL parameters
   useEffect(() => {
     const mode = searchParams.get("mode");
-    setIsSignUp(mode === "signup");
+    if (mode === "signup") {
+      setIsSignUp(true);
+    } else {
+      setIsSignUp(false);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -47,15 +51,31 @@ function LoginContent() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
+    
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Firebase not initialized",
+        description: "Please check that your environment variables (NEXT_PUBLIC_FIREBASE_*) are set correctly in .env.",
+      });
+      return;
+    }
+
+    if (isSignUp && !displayName) {
+      toast({
+        variant: "destructive",
+        title: "Name required",
+        description: "Please enter your full name for the sign-up process.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isSignUp) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        if (displayName) {
-          await updateProfile(userCredential.user, { displayName });
-        }
+        await updateProfile(userCredential.user, { displayName });
         toast({ title: "Account created!", description: "Welcome to Will You Marry Me." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -65,8 +85,17 @@ function LoginContent() {
     } catch (error: any) {
       let errorMsg = error.message;
       if (error.code === 'auth/operation-not-allowed') {
-        errorMsg = "Email/Password login is not enabled in Firebase Console.";
+        errorMsg = "This login method is not enabled in Firebase Console. Go to Authentication > Sign-in method.";
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMsg = "This email is already registered. Try logging in instead.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMsg = "Password should be at least 6 characters.";
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMsg = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMsg = "Sign-in popup was closed before completion.";
       }
+      
       toast({ 
         variant: "destructive", 
         title: isSignUp ? "Sign up failed" : "Login failed", 
@@ -78,7 +107,15 @@ function LoginContent() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) return;
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Firebase not initialized",
+        description: "Please check your .env configuration.",
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
@@ -86,22 +123,40 @@ function LoginContent() {
       toast({ title: "Success!", description: "Signed in with Google." });
       router.push("/profile");
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Google login failed", description: error.message });
+      toast({ 
+        variant: "destructive", 
+        title: "Google login failed", 
+        description: error.message 
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  if (!auth) {
+    return (
+      <div className="p-8 text-center space-y-4 max-w-md bg-white rounded-3xl shadow-xl">
+        <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
+        <h2 className="text-xl font-bold">Firebase Configuration Error</h2>
+        <p className="text-sm text-muted-foreground">
+          It looks like your Firebase API keys are missing or incorrect.<br/>
+          Make sure your <code>.env</code> file has variables starting with <code>NEXT_PUBLIC_FIREBASE_</code>.
+        </p>
+        <Button variant="outline" className="rounded-full" onClick={() => window.location.reload()}>Retry Connection</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none">
+    <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none animate-in fade-in zoom-in-95 duration-500">
       {/* Visual Side */}
       <div className="relative hidden md:block bg-primary overflow-hidden">
         <Image 
-          src="https://picsum.photos/seed/login-church/800/1200" 
+          src="https://picsum.photos/seed/login-church-visual/800/1200" 
           alt="Church Marriage" 
           fill 
           className="object-cover opacity-60 mix-blend-overlay"
-          data-ai-hint="church marriage"
+          data-ai-hint="church wedding"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-transparent" />
         <div className="absolute bottom-12 left-12 right-12 text-white space-y-6">
@@ -144,7 +199,7 @@ function LoginContent() {
                       className="pl-11 h-12 rounded-xl bg-muted/30 border-none"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      required={isSignUp}
+                      autoComplete="name"
                     />
                   </div>
                 </div>
@@ -162,6 +217,7 @@ function LoginContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -170,7 +226,7 @@ function LoginContent() {
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password">Password</Label>
                   {!isSignUp && (
-                    <Button variant="link" className="text-xs p-0 h-auto text-muted-foreground">
+                    <Button variant="link" type="button" className="text-xs p-0 h-auto text-muted-foreground">
                       Forgot Password?
                     </Button>
                   )}
@@ -185,13 +241,14 @@ function LoginContent() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete={isSignUp ? "new-password" : "current-password"}
                   />
                 </div>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-12 rounded-xl font-bold text-base shadow-lg transition-all hover:scale-[1.02]"
+                className="w-full h-12 rounded-xl font-bold text-base shadow-lg transition-all hover:scale-[1.02] bg-primary text-white"
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
@@ -214,34 +271,35 @@ function LoginContent() {
 
             <Button 
               variant="outline" 
-              className="w-full h-12 rounded-xl font-bold border-muted-foreground/20 hover:bg-muted/10"
+              className="w-full h-12 rounded-xl font-bold border-muted-foreground/20 hover:bg-muted/10 flex items-center justify-center gap-3"
               onClick={handleGoogleLogin}
               disabled={loading}
+              type="button"
             >
               <Image 
                 src="https://images.unsplash.com/gh/nextauthjs/next-auth/main/packages/next-auth/provider-logos/google.svg" 
                 alt="Google" 
                 width={20} 
                 height={20} 
-                className="mr-3"
               />
               Sign in with Google
             </Button>
           </CardContent>
 
           <CardFooter className="p-0 pt-8 justify-center">
-            <p className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               {isSignUp ? "Already have an account?" : "Don't have an account yet?"}
               <button 
+                type="button"
                 onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  router.push(`/login?mode=${!isSignUp ? 'signup' : 'login'}`);
+                  const newMode = !isSignUp ? 'signup' : 'login';
+                  router.push(`/login?mode=${newMode}`);
                 }}
                 className="ml-2 text-primary font-bold hover:underline"
               >
                 {isSignUp ? "Sign In" : "Register Free"}
               </button>
-            </p>
+            </div>
           </CardFooter>
         </Card>
       </div>
@@ -254,7 +312,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-muted/20">
       <Navbar />
       <main className="flex-grow flex items-center justify-center p-4 py-12">
-        <Suspense fallback={<Loader2 className="animate-spin text-primary w-12 h-12" />}>
+        <Suspense fallback={
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="animate-spin text-primary w-12 h-12" />
+            <p className="text-muted-foreground font-bold">Loading secure portal...</p>
+          </div>
+        }>
           <LoginContent />
         </Suspense>
       </main>
