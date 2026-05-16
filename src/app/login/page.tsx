@@ -6,14 +6,14 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAuth, useUser } from "@/firebase";
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInWithPopup, 
   GoogleAuthProvider,
-  updateProfile 
+  updateProfile,
+  signOut
 } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Mail, Lock, Loader2, ArrowRight, User, AlertTriangle } from "lucide-react";
@@ -31,6 +31,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [justSignedUp, setJustSignedUp] = useState(false);
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -38,10 +39,11 @@ function LoginContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (user && !authLoading) {
+    // Only redirect if logged in and we didn't JUST sign up
+    if (user && !authLoading && !justSignedUp) {
       router.push("/profile");
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, justSignedUp]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ function LoginContent() {
       toast({
         variant: "destructive",
         title: "Firebase not initialized",
-        description: "Credentials missing in src/firebase/config.ts",
+        description: "Configuration missing.",
       });
       return;
     }
@@ -68,23 +70,34 @@ function LoginContent() {
 
     try {
       if (isSignUp) {
+        setJustSignedUp(true);
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
-        toast({ title: "Account created!", description: "Welcome to Will You Marry Me." });
+        
+        // Specifically requested: do not login immediately
+        await signOut(auth);
+        
+        toast({ 
+          title: "Account created!", 
+          description: "Please log in with your credentials to continue." 
+        });
+        
+        setIsSignUp(false);
+        setPassword("");
+        setJustSignedUp(false);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome back!", description: "Logged in successfully." });
+        router.push("/profile");
       }
-      router.push("/profile");
     } catch (error: any) {
+      setJustSignedUp(false);
       console.error("Auth error:", error);
       let errorMsg = error.message;
       if (error.code === 'auth/operation-not-allowed') {
-        errorMsg = "Enable this method in Firebase Console > Authentication.";
+        errorMsg = "Enable this method in Firebase Console.";
       } else if (error.code === 'auth/email-already-in-use') {
         errorMsg = "Email already in use. Try logging in.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMsg = "Password must be at least 6 characters.";
       }
       
       toast({ 
@@ -120,7 +133,7 @@ function LoginContent() {
       <div className="p-8 text-center space-y-4 max-w-md bg-white rounded-3xl shadow-xl">
         <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
         <h2 className="text-xl font-bold">Configuration Error</h2>
-        <p className="text-sm text-muted-foreground">Check your Firebase API keys.</p>
+        <p className="text-sm text-muted-foreground">Check your Firebase credentials.</p>
         <Button variant="outline" className="rounded-full" onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
@@ -128,7 +141,6 @@ function LoginContent() {
 
   return (
     <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none">
-      {/* Hero Visual */}
       <div className="relative hidden md:block bg-primary overflow-hidden">
         <Image 
           src="https://picsum.photos/seed/marry-login/800/1200" 
@@ -145,7 +157,6 @@ function LoginContent() {
         </div>
       </div>
 
-      {/* Auth Form */}
       <div className="p-8 md:p-16 flex flex-col justify-center bg-background/50">
         <div className="max-w-sm mx-auto w-full space-y-8">
           <div className="space-y-2">
@@ -169,6 +180,7 @@ function LoginContent() {
                     className="pl-10 h-11 rounded-xl"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
+                    required={isSignUp}
                   />
                 </div>
               </div>
@@ -241,7 +253,11 @@ function LoginContent() {
           <p className="text-center text-sm text-muted-foreground">
             {isSignUp ? "Already have an account?" : "Don't have an account?"}
             <button 
-              onClick={() => router.push(`/login?mode=${isSignUp ? 'login' : 'signup'}`)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setJustSignedUp(false);
+              }}
+              type="button"
               className="ml-1 text-primary font-bold hover:underline"
             >
               {isSignUp ? "Sign In" : "Register Free"}
