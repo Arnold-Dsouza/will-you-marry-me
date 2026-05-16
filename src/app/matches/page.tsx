@@ -38,7 +38,8 @@ import {
   ShieldCheck,
   Globe,
   LayoutGrid,
-  Rows
+  Rows,
+  Send
 } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
@@ -68,6 +69,7 @@ function MatchesContent() {
   const { toast } = useToast();
 
   const [viewMode, setViewMode] = useState<"grid" | "tile">("grid");
+  const [interestView, setInterestView] = useState<"received" | "sent">("received");
   const [filters, setFilters] = useState({
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
@@ -132,6 +134,14 @@ function MatchesContent() {
       return sender ? { ...sender, interestId: interest.id, status: interest.status } : null;
     }).filter(Boolean);
   }, [receivedInterests, allUsers]);
+
+  const peopleILiked = useMemo(() => {
+    if (!sentInterests || !allUsers) return [];
+    return sentInterests.map((interest: any) => {
+      const receiver = allUsers.find((u: any) => u.uid === interest.receiverId);
+      return receiver ? { ...receiver, interestId: interest.id, status: interest.status } : null;
+    }).filter(Boolean);
+  }, [sentInterests, allUsers]);
 
   const handleExpressInterest = (match: any) => {
     if (!user) {
@@ -222,7 +232,7 @@ function MatchesContent() {
 
               <TabsList className="bg-white p-1 rounded-full shadow-sm border h-12">
                 <TabsTrigger value="discover" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Discover</TabsTrigger>
-                <TabsTrigger value="received" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white relative">
+                <TabsTrigger value="interests" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white relative">
                   Interests
                   {peopleWhoLikedMe.length > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-lg animate-bounce">
@@ -301,27 +311,68 @@ function MatchesContent() {
                 )}
               </TabsContent>
 
-              <TabsContent value="received" className="m-0">
-                {peopleWhoLikedMe.length > 0 ? (
-                  <div className={cn(
-                    "grid gap-6",
-                    viewMode === "grid" 
-                      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
-                      : "grid-cols-1"
-                  )}>
-                    {peopleWhoLikedMe.map((match: any) => (
-                      <MatchCard 
-                        key={match.uid} 
-                        match={match} 
-                        viewMode={viewMode}
-                        isInterest 
-                        onView={() => setSelectedMatch(match)}
-                        onMessage={() => handleStartChat(match)}
-                      />
-                    ))}
-                  </div>
+              <TabsContent value="interests" className="m-0">
+                <div className="mb-6 flex gap-2 p-1 bg-white rounded-2xl w-fit shadow-sm border">
+                   <Button 
+                    variant={interestView === "received" ? "secondary" : "ghost"} 
+                    className="rounded-xl h-10 px-6 font-bold"
+                    onClick={() => setInterestView("received")}
+                   >
+                     Received ({peopleWhoLikedMe.length})
+                   </Button>
+                   <Button 
+                    variant={interestView === "sent" ? "secondary" : "ghost"} 
+                    className="rounded-xl h-10 px-6 font-bold"
+                    onClick={() => setInterestView("sent")}
+                   >
+                     Sent ({peopleILiked.length})
+                   </Button>
+                </div>
+
+                {interestView === "received" ? (
+                  peopleWhoLikedMe.length > 0 ? (
+                    <div className={cn(
+                      "grid gap-6",
+                      viewMode === "grid" 
+                        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
+                        : "grid-cols-1"
+                    )}>
+                      {peopleWhoLikedMe.map((match: any) => (
+                        <MatchCard 
+                          key={match.uid} 
+                          match={match} 
+                          viewMode={viewMode}
+                          isInterest 
+                          onView={() => setSelectedMatch(match)}
+                          onMessage={() => handleStartChat(match)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState title="No interest yet" description="New interests will appear here once other members view your profile." />
+                  )
                 ) : (
-                  <EmptyState title="No interest yet" description="New interests will appear here once other members view your profile." />
+                  peopleILiked.length > 0 ? (
+                    <div className={cn(
+                      "grid gap-6",
+                      viewMode === "grid" 
+                        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
+                        : "grid-cols-1"
+                    )}>
+                      {peopleILiked.map((match: any) => (
+                        <MatchCard 
+                          key={match.uid} 
+                          match={match} 
+                          viewMode={viewMode}
+                          isSentInterest
+                          onView={() => setSelectedMatch(match)}
+                          onMessage={() => handleStartChat(match)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState title="No sent interests" description="Profiles you've expressed interest in will appear here." />
+                  )
                 )}
               </TabsContent>
             </div>
@@ -459,7 +510,7 @@ function MatchesContent() {
   );
 }
 
-function MatchCard({ match, onInterest, onMessage, onView, isInterest, viewMode }: any) {
+function MatchCard({ match, onInterest, onMessage, onView, isInterest, isSentInterest, viewMode }: any) {
   const isTile = viewMode === "tile";
   const safePhotoURL = getValidImageUrl(match.photoURL, match.uid);
 
@@ -474,7 +525,7 @@ function MatchCard({ match, onInterest, onMessage, onView, isInterest, viewMode 
            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{match.denomination || 'Christian'} • {match.location || 'Global'}</p>
         </div>
         <div className="flex items-center gap-2 px-2">
-           {isInterest ? (
+           {isInterest || isSentInterest ? (
              <Button size="sm" className="rounded-full h-8 px-4" onClick={onMessage}>Message</Button>
            ) : (
              <>
@@ -497,9 +548,12 @@ function MatchCard({ match, onInterest, onMessage, onView, isInterest, viewMode 
           className="object-cover group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute top-4 right-4">
-          <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary">
-            <Heart className="w-5 h-5" />
-          </Button>
+          <Badge className={cn(
+            "rounded-full px-3 py-1 border-none shadow-lg",
+            isInterest ? "bg-accent text-white" : isSentInterest ? "bg-primary text-white" : "bg-white/40 backdrop-blur-md text-white"
+          )}>
+            {isInterest ? "Interested in you" : isSentInterest ? "Interest Sent" : <Heart className="w-4 h-4" />}
+          </Badge>
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
           <Button variant="secondary" className="w-full rounded-xl font-bold bg-white/90 backdrop-blur-sm text-primary">
@@ -537,6 +591,10 @@ function MatchCard({ match, onInterest, onMessage, onView, isInterest, viewMode 
           {isInterest ? (
             <Button className="w-full rounded-xl bg-accent hover:bg-accent/90 shadow-md font-bold" onClick={onMessage}>
               <MessageCircle className="w-4 h-4 mr-2" /> Message Back
+            </Button>
+          ) : isSentInterest ? (
+            <Button variant="outline" className="w-full rounded-xl border-primary text-primary font-bold h-11" onClick={onMessage}>
+              <Send className="w-4 h-4 mr-2" /> Continue Chat
             </Button>
           ) : (
             <div className="flex gap-2">
