@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
+import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut, Menu } from "lucide-react";
 import { useAuth, useUser, useFirestore, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { name: "Matches", href: "/matches", icon: Search },
@@ -27,6 +28,7 @@ export function Navbar() {
   const auth = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Fetch the user's custom profile from Firestore for the photo
   const userDocRef = useMemo(() => {
@@ -75,14 +77,51 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform shadow-lg">
-            <Heart className="w-6 h-6 fill-current" />
-          </div>
-          <span className="font-headline text-xl font-bold tracking-tight text-primary">
-            Will You Marry Me
-          </span>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="xl:hidden rounded-full">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+               <div className="p-6 border-b bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-primary fill-current" />
+                    <span className="font-headline text-xl font-bold text-primary">Menu</span>
+                  </div>
+               </div>
+               <div className="flex flex-col py-4">
+                 {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link 
+                        key={item.href} 
+                        href={item.href} 
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-4 px-6 py-4 font-bold text-sm hover:bg-primary/5",
+                          pathname === item.href ? "text-primary bg-primary/5" : "text-muted-foreground"
+                        )}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {item.name}
+                      </Link>
+                    );
+                 })}
+               </div>
+            </SheetContent>
+          </Sheet>
+
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform shadow-lg">
+              <Heart className="w-6 h-6 fill-current" />
+            </div>
+            <span className="font-headline text-xl font-bold tracking-tight text-primary hidden sm:inline">
+              Will You Marry Me
+            </span>
+          </Link>
+        </div>
 
         <div className="hidden xl:flex items-center gap-6">
           {navItems.map((item) => {
@@ -129,15 +168,15 @@ export function Navbar() {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold flex">
+                <Button variant="ghost" size="sm" className="rounded-full px-3 sm:px-6 font-bold flex">
                   Login
                 </Button>
               </Link>
               <Link href="/login?mode=signup">
-                <Button size="sm" className="rounded-full px-6 shadow-lg font-bold bg-accent hover:bg-accent/90">
-                  Sign Up
+                <Button size="sm" className="rounded-full px-4 sm:px-6 shadow-lg font-bold bg-accent hover:bg-accent/90">
+                  Join
                 </Button>
               </Link>
             </div>

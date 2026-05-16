@@ -36,7 +36,9 @@ import {
   Info,
   User as UserIcon,
   ShieldCheck,
-  Globe
+  Globe,
+  LayoutGrid,
+  Rows
 } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
@@ -46,6 +48,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+// Helper to validate URLs to prevent next/image crashes
+const getValidImageUrl = (url: string | undefined, uid: string) => {
+  const fallback = `https://picsum.photos/seed/${uid}/600/800`;
+  if (!url) return fallback;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  return fallback;
+};
 
 function MatchesContent() {
   const router = useRouter();
@@ -54,6 +67,7 @@ function MatchesContent() {
   const db = useFirestore();
   const { toast } = useToast();
 
+  const [viewMode, setViewMode] = useState<"grid" | "tile">("grid");
   const [filters, setFilters] = useState({
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
@@ -141,9 +155,6 @@ function MatchesContent() {
           description: `We've notified ${match.displayName || 'this member'} of your interest.`,
         });
         setSelectedMatch(null);
-      })
-      .catch((e) => {
-        toast({ variant: "destructive", title: "Operation failed", description: "Could not express interest." });
       });
   };
 
@@ -189,17 +200,38 @@ function MatchesContent() {
               <p className="text-muted-foreground text-sm">Find partners who share your vision for a Christ-centered life.</p>
             </div>
             
-            <TabsList className="bg-white p-1 rounded-full shadow-sm border h-12">
-              <TabsTrigger value="discover" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Discover</TabsTrigger>
-              <TabsTrigger value="received" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white relative">
-                Interests Received
-                {peopleWhoLikedMe.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-lg animate-bounce">
-                    {peopleWhoLikedMe.length}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex bg-white p-1 rounded-xl shadow-sm border">
+                <Button 
+                  variant={viewMode === "grid" ? "secondary" : "ghost"} 
+                  size="icon" 
+                  className="rounded-lg"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant={viewMode === "tile" ? "secondary" : "ghost"} 
+                  size="icon" 
+                  className="rounded-lg"
+                  onClick={() => setViewMode("tile")}
+                >
+                  <Rows className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <TabsList className="bg-white p-1 rounded-full shadow-sm border h-12">
+                <TabsTrigger value="discover" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Discover</TabsTrigger>
+                <TabsTrigger value="received" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white relative">
+                  Interests
+                  {peopleWhoLikedMe.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-lg animate-bounce">
+                      {peopleWhoLikedMe.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
@@ -248,11 +280,17 @@ function MatchesContent() {
                     <p>Scanning the community...</p>
                   </div>
                 ) : filteredMatches.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className={cn(
+                    "grid gap-6",
+                    viewMode === "grid" 
+                      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
+                      : "grid-cols-1"
+                  )}>
                     {filteredMatches.map((match: any) => (
                       <MatchCard 
                         key={match.uid} 
                         match={match} 
+                        viewMode={viewMode}
                         onView={() => setSelectedMatch(match)}
                         onInterest={() => handleExpressInterest(match)} 
                       />
@@ -265,11 +303,17 @@ function MatchesContent() {
 
               <TabsContent value="received" className="m-0">
                 {peopleWhoLikedMe.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className={cn(
+                    "grid gap-6",
+                    viewMode === "grid" 
+                      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
+                      : "grid-cols-1"
+                  )}>
                     {peopleWhoLikedMe.map((match: any) => (
                       <MatchCard 
                         key={match.uid} 
                         match={match} 
+                        viewMode={viewMode}
                         isInterest 
                         onView={() => setSelectedMatch(match)}
                         onMessage={() => handleStartChat(match)}
@@ -287,11 +331,15 @@ function MatchesContent() {
 
       <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 rounded-[2.5rem] border-none shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedMatch?.displayName || "Profile"}'s Spiritual Identity</DialogTitle>
+            <DialogDescription>Full profile details and faith journey.</DialogDescription>
+          </DialogHeader>
           {selectedMatch && (
             <div className="flex flex-col">
               <div className="relative h-64 md:h-80 w-full">
                 <Image
-                  src={selectedMatch.photoURL || `https://picsum.photos/seed/${selectedMatch.uid}/1200/800`}
+                  src={getValidImageUrl(selectedMatch.photoURL, selectedMatch.uid)}
                   alt={selectedMatch.displayName || ""}
                   fill
                   className="object-cover"
@@ -411,12 +459,39 @@ function MatchesContent() {
   );
 }
 
-function MatchCard({ match, onInterest, onMessage, onView, isInterest }: any) {
+function MatchCard({ match, onInterest, onMessage, onView, isInterest, viewMode }: any) {
+  const isTile = viewMode === "tile";
+  const safePhotoURL = getValidImageUrl(match.photoURL, match.uid);
+
+  if (isTile) {
+    return (
+      <Card className="border-none shadow-sm hover:shadow-md transition-all flex items-center p-3 rounded-2xl bg-white group">
+        <div className="relative w-16 h-16 rounded-xl overflow-hidden cursor-pointer shrink-0" onClick={onView}>
+          <Image src={safePhotoURL} alt="" fill className="object-cover" />
+        </div>
+        <div className="ml-4 flex-grow cursor-pointer" onClick={onView}>
+           <h3 className="font-bold text-sm">{match.displayName || 'Member'}, {match.age || '??'}</h3>
+           <p className="text-xs text-muted-foreground truncate max-w-[200px]">{match.denomination || 'Christian'} • {match.location || 'Global'}</p>
+        </div>
+        <div className="flex items-center gap-2 px-2">
+           {isInterest ? (
+             <Button size="sm" className="rounded-full h-8 px-4" onClick={onMessage}>Message</Button>
+           ) : (
+             <>
+               <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground" onClick={onView}><Info className="w-4 h-4" /></Button>
+               <Button size="sm" className="rounded-full h-8 px-4" onClick={onInterest}>Interest</Button>
+             </>
+           )}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-none shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group bg-white rounded-[2rem]">
       <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={onView}>
         <Image
-          src={match.photoURL || `https://picsum.photos/seed/${match.uid}/600/800`}
+          src={safePhotoURL}
           alt={match.displayName || "Member"}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-700"
