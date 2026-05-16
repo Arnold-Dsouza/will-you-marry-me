@@ -17,10 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, CheckCircle2, Save, User, MapPin, Church, Briefcase, GraduationCap, Ruler, Heart, Star, Baby, UserCircle, Globe, Wallet, Users, Coffee, Utensils } from "lucide-react";
+import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, Users, Coffee, Utensils, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
 
 export function ProfileOptimizerUI() {
@@ -31,7 +31,7 @@ export function ProfileOptimizerUI() {
   const [result, setResult] = useState<AIProfileOptimizerOutput | null>(null);
   const { toast } = useToast();
 
-  const userDocRef = user && db ? doc(db, "users", user.uid) : null;
+  const userDocRef = useMemo(() => user && db ? doc(db, "users", user.uid) : null, [user, db]);
   const { data: profile } = useDoc(userDocRef);
 
   const [formData, setFormData] = useState({
@@ -104,25 +104,6 @@ export function ProfileOptimizerUI() {
     return Math.round((filled.length / criticalFields.length) * 100);
   }, [formData]);
 
-  const [traitInput, setTraitInput] = useState("");
-
-  const handleAddTrait = () => {
-    if (traitInput.trim() && !formData.personalityTraits.includes(traitInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        personalityTraits: [...prev.personalityTraits, traitInput.trim()]
-      }));
-      setTraitInput("");
-    }
-  };
-
-  const handleRemoveTrait = (trait: string) => {
-    setFormData(prev => ({
-      ...prev,
-      personalityTraits: prev.personalityTraits.filter(t => t !== trait)
-    }));
-  };
-
   const handleOptimize = async () => {
     if (!formData.rawBio || !formData.faithDetails) {
       toast({
@@ -171,11 +152,11 @@ export function ProfileOptimizerUI() {
         email: user.email,
         age: parseInt(formData.age) || 0,
         bio: bioToSave || formData.rawBio,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp(),
       };
       
       await setDoc(doc(db, "users", user.uid), updatedData, { merge: true });
-      toast({ title: "Profile Saved", description: "Your spiritual identity has been updated." });
+      toast({ title: "Profile Saved", description: "Your spiritual identity has been updated and is now visible to others." });
       if (bioToSave) {
         setFormData(prev => ({ ...prev, rawBio: bioToSave }));
       }
@@ -188,7 +169,6 @@ export function ProfileOptimizerUI() {
 
   return (
     <div className="space-y-12">
-      {/* Progress Section */}
       <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
         <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
            <div className="relative shrink-0">
@@ -216,7 +196,6 @@ export function ProfileOptimizerUI() {
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-8">
-          {/* 1. Basic Details */}
           <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
             <CardHeader className="bg-primary/5 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
@@ -227,9 +206,6 @@ export function ProfileOptimizerUI() {
                     ) : (
                       <User className="w-12 h-12 text-muted-foreground" />
                     )}
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                     <span className="text-white text-[10px] font-bold">CHANGE</span>
                   </div>
                 </div>
                 <div className="flex-grow space-y-2 text-center md:text-left">
@@ -251,11 +227,11 @@ export function ProfileOptimizerUI() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">Full Name</Label>
+                <Label>Full Name</Label>
                 <Input value={formData.displayName} onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">Gender</Label>
+                <Label>Gender</Label>
                 <Select value={formData.gender} onValueChange={(val) => setFormData(p => ({ ...p, gender: val }))}>
                   <SelectTrigger className="rounded-xl h-12">
                     <SelectValue />
@@ -267,7 +243,7 @@ export function ProfileOptimizerUI() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">Age</Label>
+                <Label>Age</Label>
                 <Input type="number" value={formData.age} onChange={(e) => setFormData(p => ({ ...p, age: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
@@ -283,28 +259,19 @@ export function ProfileOptimizerUI() {
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Mother Tongue</Label>
-                <Input placeholder="e.g. English, Spanish, Malayalam" value={formData.motherTongue} onChange={(e) => setFormData(p => ({ ...p, motherTongue: e.target.value }))} className="rounded-xl h-12" />
+                <Input placeholder="e.g. English" value={formData.motherTongue} onChange={(e) => setFormData(p => ({ ...p, motherTongue: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Ruler className="w-4 h-4 text-primary" /> Height</Label>
                 <Input placeholder="e.g. 5 ft 10 in" value={formData.height} onChange={(e) => setFormData(p => ({ ...p, height: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">Physical Status</Label>
-                <Select value={formData.physicalStatus} onValueChange={(val) => setFormData(p => ({ ...p, physicalStatus: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Normal">Normal</SelectItem>
-                    <SelectItem value="Physically Challenged">Physically Challenged</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> Location</Label>
+                <Input placeholder="City, State" value={formData.location} onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))} className="rounded-xl h-12" />
               </div>
             </CardContent>
           </Card>
 
-          {/* 2. Religious Information */}
           <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
             <CardHeader>
               <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Church className="w-6 h-6 text-primary" /> Religious Information</CardTitle>
@@ -337,7 +304,6 @@ export function ProfileOptimizerUI() {
             </CardContent>
           </Card>
 
-          {/* 3. Professional Information */}
           <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
             <CardHeader>
               <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Briefcase className="w-6 h-6 text-primary" /> Professional Information</CardTitle>
@@ -368,94 +334,8 @@ export function ProfileOptimizerUI() {
               </div>
             </CardContent>
           </Card>
-
-          {/* 4. Family Details */}
-          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
-            <CardHeader>
-              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Family Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Family Value</Label>
-                <Select value={formData.familyValue} onValueChange={(val) => setFormData(p => ({ ...p, familyValue: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Traditional", "Moderate", "Liberal"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Family Type</Label>
-                <Select value={formData.familyType} onValueChange={(val) => setFormData(p => ({ ...p, familyType: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Joint">Joint</SelectItem>
-                    <SelectItem value="Nuclear">Nuclear</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Family Status</Label>
-                <Select value={formData.familyStatus} onValueChange={(val) => setFormData(p => ({ ...p, familyStatus: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Middle Class", "Upper Middle Class", "Rich / Affluent"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 5. Lifestyle */}
-          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
-            <CardHeader>
-              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2">Lifestyle Habits</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Utensils className="w-4 h-4 text-primary" /> Eating Habits</Label>
-                <Select value={formData.eatingHabits} onValueChange={(val) => setFormData(p => ({ ...p, eatingHabits: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Vegetarian", "Non-Vegetarian", "Eggetarian"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Coffee className="w-4 h-4 text-primary" /> Drinking Habits</Label>
-                <Select value={formData.drinkingHabits} onValueChange={(val) => setFormData(p => ({ ...p, drinkingHabits: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["No", "Drinks Socially", "Yes"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Smoking Habits</Label>
-                <Select value={formData.smokingHabits} onValueChange={(val) => setFormData(p => ({ ...p, smokingHabits: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["No", "Occasionally", "Yes"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Right Column: AI Assistant & Bio */}
         <div className="space-y-8 sticky top-24">
           <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
             <div className="h-2 bg-gradient-to-r from-primary to-accent" />
@@ -467,12 +347,21 @@ export function ProfileOptimizerUI() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Your Spiritual Story</Label>
+                <Label>Bio Draft</Label>
                 <Textarea
-                  placeholder="Draft your bio here..."
+                  placeholder="Tell us your story..."
                   className="min-h-[150px] rounded-2xl p-4 bg-muted/20 border-none resize-none"
                   value={formData.rawBio}
                   onChange={(e) => setFormData(prev => ({ ...prev, rawBio: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Faith Journey Details</Label>
+                <Textarea
+                  placeholder="How did you come to know the Lord?"
+                  className="min-h-[100px] rounded-2xl p-4 bg-muted/20 border-none resize-none text-xs"
+                  value={formData.faithDetails}
+                  onChange={(e) => setFormData(prev => ({ ...prev, faithDetails: e.target.value }))}
                 />
               </div>
               <div className="flex gap-4">
@@ -480,7 +369,7 @@ export function ProfileOptimizerUI() {
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                   Save
                 </Button>
-                <Button className="flex-1 h-12 rounded-xl" onClick={handleOptimize} disabled={loading}>
+                <Button className="flex-1 h-12 rounded-xl shadow-lg" onClick={handleOptimize} disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                   Optimize
                 </Button>
@@ -489,12 +378,13 @@ export function ProfileOptimizerUI() {
           </Card>
 
           {result && (
-            <Card className="border-2 border-accent/20 bg-accent/5 rounded-[2.5rem]">
+            <Card className="border-2 border-accent/20 bg-accent/5 rounded-[2.5rem] animate-in slide-in-from-right-4 duration-500">
               <CardContent className="p-6">
-                <p className="text-sm italic font-body">"{result.optimizedBio}"</p>
-                <div className="mt-4 flex justify-end gap-2">
-                  <Button size="sm" className="rounded-full bg-accent" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
-                    Apply this Bio
+                <h4 className="text-xs font-bold uppercase tracking-widest text-accent mb-3">AI Suggestions</h4>
+                <p className="text-sm italic font-body text-foreground/80 leading-relaxed">"{result.optimizedBio}"</p>
+                <div className="mt-6 flex flex-col gap-2">
+                  <Button size="sm" className="rounded-full bg-accent shadow-md" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
+                    Adopt AI Bio
                   </Button>
                 </div>
               </CardContent>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Filter, Heart, MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, UserCheck } from "lucide-react";
+import { MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, UserCheck, Heart } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where } from "firebase/firestore";
@@ -26,21 +26,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function MatchesPage() {
-  const [showFilters, setShowFilters] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
 
-  // Filters state
   const [filters, setFilters] = useState({
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
-    education: "any",
   });
 
-  // Queries
   const usersQuery = useMemo(() => {
     if (!db) return null;
     return collection(db, "users");
@@ -67,7 +63,6 @@ export default function MatchesPage() {
   const { data: receivedInterests } = useCollection(receivedInterestsQuery);
   const { data: sentInterests } = useCollection(sentInterestsQuery);
 
-  // Profile completion calculation
   const completion = useMemo(() => {
     if (!profile) return 0;
     const fields = ['displayName', 'age', 'gender', 'location', 'denomination', 'bio', 'photoURL', 'faithDetails'];
@@ -77,7 +72,6 @@ export default function MatchesPage() {
 
   const isProfileComplete = completion >= 100;
 
-  // Client-side filtering for Discover tab
   const filteredMatches = useMemo(() => {
     if (!allUsers) return [];
     return allUsers.filter((m: any) => {
@@ -91,7 +85,6 @@ export default function MatchesPage() {
     });
   }, [allUsers, user, filters, sentInterests]);
 
-  // Map interests to user profiles
   const peopleWhoLikedMe = useMemo(() => {
     if (!receivedInterests || !allUsers) return [];
     return receivedInterests.map((interest: any) => {
@@ -118,8 +111,6 @@ export default function MatchesPage() {
         title: "Interest Expressed!",
         description: `We've notified ${match.displayName || 'this member'} of your interest.`,
       });
-    }).catch((e) => {
-      toast({ title: "Error", description: "Could not send interest.", variant: "destructive" });
     });
   };
 
@@ -140,7 +131,7 @@ export default function MatchesPage() {
     for (const s of samples) {
       setDoc(doc(db, "users", s.uid), s, { merge: true });
     }
-    toast({ title: "Samples added", description: "The match list is refreshing." });
+    toast({ title: "Samples added", description: "The community is growing!" });
   };
 
   return (
@@ -148,10 +139,8 @@ export default function MatchesPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Profile Completion Callout */}
         {user && !isProfileComplete && (
           <Card className="mb-12 border-none shadow-xl bg-primary text-primary-foreground overflow-hidden rounded-[2.5rem] relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 relative z-10">
               <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center shrink-0">
                 <Sparkles className="w-10 h-10 text-white" />
@@ -159,7 +148,7 @@ export default function MatchesPage() {
               <div className="flex-grow space-y-2 text-center md:text-left">
                 <h3 className="text-2xl md:text-3xl font-headline font-bold">Complete Your Spiritual Identity</h3>
                 <p className="opacity-80 max-w-xl">
-                  Profiles with 100% completion receive 5x more intentional interest. Express your faith journey to find your God-ordained partner.
+                  Profiles with 100% completion receive 5x more intentional interest. Make yourself visible to find your God-ordained partner.
                 </p>
                 <div className="pt-4 max-w-md mx-auto md:mx-0">
                    <div className="flex justify-between items-center mb-2">
@@ -180,7 +169,7 @@ export default function MatchesPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <h2 className="text-3xl font-headline font-bold text-primary">Matrimonial Search</h2>
-              <p className="text-muted-foreground text-sm">Find your intentional partner based on spiritual depth.</p>
+              <p className="text-muted-foreground text-sm">Find partners who share your vision for a Christ-centered life.</p>
             </div>
             
             <TabsList className="bg-white p-1 rounded-full shadow-sm border h-12">
@@ -198,33 +187,24 @@ export default function MatchesPage() {
             <div className="flex items-center gap-3">
               {user && (
                 <Button variant="outline" size="sm" onClick={seedSampleData} className="rounded-full h-10 px-4">
-                  <UserPlus className="w-4 h-4 mr-2" /> Add Samples
+                  <UserPlus className="w-4 h-4 mr-2" /> Seed community
                 </Button>
               )}
             </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar Filters */}
-            <aside className={`lg:w-72 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <aside className="lg:w-72 space-y-6">
               <div className="bg-white p-6 rounded-3xl shadow-sm space-y-8 border">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-lg">Preferences</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-primary h-8 px-2"
-                    onClick={() => setFilters({ gender: "any", denomination: "any", education: "any" })}
-                  >
-                    Reset
-                  </Button>
+                  <h3 className="font-bold text-lg">Filters</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setFilters({ gender: "any", denomination: "any" })}>Reset</Button>
                 </div>
-
                 <div className="space-y-4">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Looking For</Label>
                   <Select value={filters.gender} onValueChange={(val) => setFilters(p => ({ ...p, gender: val }))}>
                     <SelectTrigger className="w-full h-10 rounded-xl bg-muted/50 border-none">
-                      <SelectValue placeholder="Select Gender" />
+                      <SelectValue placeholder="Gender" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any</SelectItem>
@@ -233,7 +213,6 @@ export default function MatchesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-4">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Denomination</Label>
                   <div className="space-y-2">
@@ -252,20 +231,12 @@ export default function MatchesPage() {
               </div>
             </aside>
 
-            {/* Content Area */}
             <div className="flex-grow">
-              {!isProfileComplete && (
-                <div className="mb-8 p-4 bg-accent/5 border border-accent/20 rounded-2xl flex items-center gap-3 text-sm text-accent">
-                  <UserCheck className="w-5 h-5" />
-                  <span>Some matches might be hidden until your profile is fully complete.</span>
-                </div>
-              )}
-
               <TabsContent value="discover" className="m-0">
                 {usersLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                     <Loader2 className="w-10 h-10 animate-spin mb-4" />
-                    <p>Searching for God-ordained matches...</p>
+                    <p>Scanning the community...</p>
                   </div>
                 ) : filteredMatches.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -278,11 +249,7 @@ export default function MatchesPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState 
-                    title="No new profiles found" 
-                    description="Try widening your search preferences or check back later for new intentional singles."
-                    action={<Button variant="outline" className="rounded-full" onClick={() => setFilters({ gender: "any", denomination: "any", education: "any" })}>Reset Filters</Button>}
-                  />
+                  <EmptyState title="No matches found" description="Try widening your filters to see more intentional community members." />
                 )}
               </TabsContent>
 
@@ -299,11 +266,7 @@ export default function MatchesPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState 
-                    title="No interests yet" 
-                    description="Incoming interest requests will appear here once someone views your profile."
-                    action={<Button className="rounded-full" asChild><Link href="/profile">Enhance Your Profile</Link></Button>}
-                  />
+                  <EmptyState title="No interest yet" description="New interests will appear here once other members view your profile." />
                 )}
               </TabsContent>
             </div>
@@ -326,21 +289,16 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
           data-ai-hint="member portrait"
         />
         <div className="absolute top-4 right-4">
-          <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary transition-all">
+          <Button size="icon" className="rounded-full bg-white/40 backdrop-blur-md border border-white/30 hover:bg-white text-white hover:text-primary">
             <Heart className="w-5 h-5" />
           </Button>
-        </div>
-        <div className="absolute bottom-4 left-4">
-          <Badge className="bg-accent text-white border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider rounded-full shadow-lg">
-            98% Compatibility
-          </Badge>
         </div>
       </div>
       <CardContent className="p-6 space-y-4">
         <div>
-          <h3 className="text-xl font-headline font-bold">{match.displayName || 'Anonymous'}, {match.age || '25'}</h3>
+          <h3 className="text-xl font-headline font-bold">{match.displayName || 'Anonymous'}, {match.age || '??'}</h3>
           <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
-            <MapPin className="w-3 h-3" /> {match.location || 'Global'}
+            <MapPin className="w-3 h-3 text-accent" /> {match.location || 'Global'}
           </div>
         </div>
 
@@ -355,17 +313,17 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground line-clamp-2 italic">
-          "{match.bio || "Searching for a Christ-centered journey..."}"
+        <p className="text-xs text-muted-foreground line-clamp-2 italic leading-relaxed">
+          "{match.bio || "Searching for a Christ-centered partner..."}"
         </p>
 
         <div className="pt-2 flex gap-2">
           {isInterest ? (
-            <Button className="flex-grow rounded-xl bg-accent hover:bg-accent/90" onClick={onMessage}>
+            <Button className="flex-grow rounded-xl bg-accent hover:bg-accent/90 shadow-md" onClick={onMessage}>
               <MessageCircle className="w-4 h-4 mr-2" /> Message Back
             </Button>
           ) : (
-            <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90" onClick={onInterest}>
+            <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md" onClick={onInterest}>
               Express Interest
             </Button>
           )}
@@ -375,15 +333,11 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
   );
 }
 
-function EmptyState({ title, description, action }: any) {
+function EmptyState({ title, description }: any) {
   return (
-    <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-muted space-y-4 px-6">
-      <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center">
-        <ArrowRight className="w-8 h-8 text-muted-foreground" />
-      </div>
+    <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed space-y-4 px-6">
       <h3 className="text-xl font-headline font-bold">{title}</h3>
       <p className="text-muted-foreground max-w-sm mx-auto text-sm">{description}</p>
-      <div className="pt-4">{action}</div>
     </div>
   );
 }
