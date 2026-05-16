@@ -16,13 +16,36 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Church, Briefcase, Loader2, MessageCircle, ArrowRight, Sparkles, Heart } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { 
+  MapPin, 
+  Church, 
+  Briefcase, 
+  Loader2, 
+  MessageCircle, 
+  ArrowRight, 
+  Sparkles, 
+  Heart, 
+  GraduationCap, 
+  Info,
+  User as UserIcon,
+  ShieldCheck,
+  Globe
+} from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
 import { collection, query, where, doc, addDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 function MatchesContent() {
   const router = useRouter();
@@ -35,6 +58,8 @@ function MatchesContent() {
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
   });
+
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
 
   const usersQuery = useMemo(() => {
     if (!db) return null;
@@ -74,14 +99,11 @@ function MatchesContent() {
   const filteredMatches = useMemo(() => {
     if (!allUsers) return [];
     return allUsers.filter((m: any) => {
-      // Don't show current user
       if (m.uid === user?.uid) return false;
       
-      // Filter by interest already sent
       const alreadySent = sentInterests?.some((i: any) => i.receiverId === m.uid);
       if (alreadySent) return false;
 
-      // Apply UI filters
       if (filters.gender !== "any" && m.gender !== filters.gender) return false;
       if (filters.denomination !== "any" && m.denomination !== filters.denomination) return false;
       
@@ -118,6 +140,7 @@ function MatchesContent() {
           title: "Interest Expressed!",
           description: `We've notified ${match.displayName || 'this member'} of your interest.`,
         });
+        setSelectedMatch(null);
       })
       .catch((e) => {
         toast({ variant: "destructive", title: "Operation failed", description: "Could not express interest." });
@@ -230,6 +253,7 @@ function MatchesContent() {
                       <MatchCard 
                         key={match.uid} 
                         match={match} 
+                        onView={() => setSelectedMatch(match)}
                         onInterest={() => handleExpressInterest(match)} 
                       />
                     ))}
@@ -247,6 +271,7 @@ function MatchesContent() {
                         key={match.uid} 
                         match={match} 
                         isInterest 
+                        onView={() => setSelectedMatch(match)}
                         onMessage={() => handleStartChat(match)}
                       />
                     ))}
@@ -259,14 +284,137 @@ function MatchesContent() {
           </div>
         </Tabs>
       </main>
+
+      <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 rounded-[2.5rem] border-none shadow-2xl">
+          {selectedMatch && (
+            <div className="flex flex-col">
+              <div className="relative h-64 md:h-80 w-full">
+                <Image
+                  src={selectedMatch.photoURL || `https://picsum.photos/seed/${selectedMatch.uid}/1200/800`}
+                  alt={selectedMatch.displayName || ""}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-6 left-8 right-8 text-white">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <Badge className="bg-accent text-white border-none rounded-full px-4">
+                      {selectedMatch.denomination || "Christian"}
+                    </Badge>
+                    <Badge className="bg-primary/80 backdrop-blur-md text-white border-none rounded-full px-4">
+                      {selectedMatch.maritalStatus || "Single"}
+                    </Badge>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-headline font-bold">
+                    {selectedMatch.displayName}, {selectedMatch.age}
+                  </h2>
+                  <p className="flex items-center gap-2 opacity-80 mt-1">
+                    <MapPin className="w-4 h-4" /> {selectedMatch.location || "Global"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-8 md:p-10 space-y-10">
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Info className="w-5 h-5" />
+                    <h3 className="text-xl font-headline font-bold">About Me</h3>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed italic text-lg">
+                    "{selectedMatch.bio || "Seeking a partner who shares a passion for the Lord and building a Christ-centered home."}"
+                  </p>
+                </section>
+
+                <Separator />
+
+                <div className="grid md:grid-cols-2 gap-10">
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Church className="w-5 h-5" />
+                      <h3 className="font-headline font-bold">Faith & Spiritual Life</h3>
+                    </div>
+                    <div className="space-y-3 bg-muted/30 p-5 rounded-2xl">
+                      <div className="text-sm">
+                        <span className="font-bold block text-primary/70 mb-1">Faith Journey</span>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {selectedMatch.faithDetails || "Currently growing in a personal walk with Christ and active in the local church community."}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                         <div>
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Denomination</span>
+                           <p className="text-sm font-medium">{selectedMatch.denomination || "N/A"}</p>
+                         </div>
+                         <div>
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Parish</span>
+                           <p className="text-sm font-medium">{selectedMatch.parish || "N/A"}</p>
+                         </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Briefcase className="w-5 h-5" />
+                      <h3 className="font-headline font-bold">Professional & Background</h3>
+                    </div>
+                    <div className="grid gap-4">
+                      <div className="flex items-start gap-3">
+                        <GraduationCap className="w-5 h-5 text-accent mt-0.5" />
+                        <div>
+                          <p className="text-sm font-bold">{selectedMatch.education || "University Graduate"}</p>
+                          <p className="text-xs text-muted-foreground">Education Background</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Briefcase className="w-5 h-5 text-accent mt-0.5" />
+                        <div>
+                          <p className="text-sm font-bold">{selectedMatch.occupation || "Professional"}</p>
+                          <p className="text-xs text-muted-foreground">Work & Career</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Globe className="w-5 h-5 text-accent mt-0.5" />
+                        <div>
+                          <p className="text-sm font-bold">{selectedMatch.motherTongue || "English"}</p>
+                          <p className="text-xs text-muted-foreground">Mother Tongue</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <Separator />
+
+                <div className="flex flex-col md:flex-row gap-4 pt-4">
+                  <Button 
+                    className="flex-grow h-14 rounded-2xl text-lg font-bold shadow-xl bg-primary hover:bg-primary/90"
+                    onClick={() => handleExpressInterest(selectedMatch)}
+                  >
+                    <Heart className="w-5 h-5 mr-2" /> Express Intentional Interest
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-14 rounded-2xl px-8 border-primary text-primary font-bold"
+                    onClick={() => handleStartChat(selectedMatch)}
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" /> Send Private Message
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
+function MatchCard({ match, onInterest, onMessage, onView, isInterest }: any) {
   return (
     <Card className="border-none shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group bg-white rounded-[2rem]">
-      <div className="relative aspect-[3/4] overflow-hidden">
+      <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={onView}>
         <Image
           src={match.photoURL || `https://picsum.photos/seed/${match.uid}/600/800`}
           alt={match.displayName || "Member"}
@@ -278,10 +426,18 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
             <Heart className="w-5 h-5" />
           </Button>
         </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+          <Button variant="secondary" className="w-full rounded-xl font-bold bg-white/90 backdrop-blur-sm text-primary">
+            <UserIcon className="w-4 h-4 mr-2" /> View Full Profile
+          </Button>
+        </div>
       </div>
       <CardContent className="p-6 space-y-4">
-        <div>
-          <h3 className="text-xl font-headline font-bold">{match.displayName || 'Anonymous'}, {match.age || '??'}</h3>
+        <div className="cursor-pointer" onClick={onView}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-headline font-bold">{match.displayName || 'Anonymous'}, {match.age || '??'}</h3>
+            <ShieldCheck className="w-5 h-5 text-accent" />
+          </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs mt-1">
             <MapPin className="w-3 h-3 text-accent" /> {match.location || 'Global'}
           </div>
@@ -302,15 +458,20 @@ function MatchCard({ match, onInterest, onMessage, isInterest }: any) {
           "{match.bio || "Searching for a Christ-centered partner..."}"
         </p>
 
-        <div className="pt-2 flex gap-2">
+        <div className="pt-2 flex flex-col gap-2">
           {isInterest ? (
-            <Button className="flex-grow rounded-xl bg-accent hover:bg-accent/90 shadow-md font-bold" onClick={onMessage}>
+            <Button className="w-full rounded-xl bg-accent hover:bg-accent/90 shadow-md font-bold" onClick={onMessage}>
               <MessageCircle className="w-4 h-4 mr-2" /> Message Back
             </Button>
           ) : (
-            <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md font-bold" onClick={onInterest}>
-              Express Interest
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-grow rounded-xl border-primary text-primary font-bold h-11" onClick={onView}>
+                View Profile
+              </Button>
+              <Button className="flex-grow rounded-xl bg-primary hover:bg-primary/90 shadow-md font-bold h-11" onClick={onInterest}>
+                Interest
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>
