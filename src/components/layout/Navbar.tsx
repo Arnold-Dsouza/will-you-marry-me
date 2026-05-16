@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useFirestore } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const navItems = [
   { name: "Matches", href: "/matches", icon: Search },
@@ -21,7 +23,32 @@ export function Navbar() {
   const pathname = usePathname();
   const { user } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   const { toast } = useToast();
+
+  // Sync user profile to Firestore on login
+  useEffect(() => {
+    async function syncProfile() {
+      if (user && db) {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        
+        if (!docSnap.exists()) {
+          await setDoc(userDocRef, {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            updatedAt: serverTimestamp(),
+            gender: "any", // Default
+            denomination: "any", // Default
+            bio: "Excited to join this intentional community!"
+          }, { merge: true });
+        }
+      }
+    }
+    syncProfile();
+  }, [user, db]);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -69,8 +96,10 @@ export function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               <Link href="/profile">
-                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold">
-                  <User className="w-4 h-4" />
+                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold hover:bg-primary/5">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
+                    {user.photoURL ? <Image src={user.photoURL} alt="" width={24} height={24} /> : <User className="w-3 h-3 text-primary" />}
+                  </div>
                   <span className="hidden md:inline">{user.displayName?.split(' ')[0] || "Profile"}</span>
                 </Button>
               </Link>
