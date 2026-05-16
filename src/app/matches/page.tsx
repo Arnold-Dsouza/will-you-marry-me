@@ -122,10 +122,10 @@ export default function MatchesPage() {
     if (!db) return;
     
     const samples = [
-      { uid: "sample1", displayName: "Sarah Grace", age: 24, location: "Nashville, TN", denomination: "Baptist", occupation: "Nurse", gender: "bride", photoURL: "https://picsum.photos/seed/marry2/600/800", bio: "A daughter of the King seeking a partner who loves the Word." },
-      { uid: "sample2", displayName: "Michael David", age: 29, location: "Dallas, TX", denomination: "Catholic", occupation: "Architect", gender: "groom", photoURL: "https://picsum.photos/seed/marry3/600/800", bio: "Faith, family, and football. Seeking my partner in ministry." },
-      { uid: "sample3", displayName: "Hannah Joy", age: 26, location: "Charlotte, NC", denomination: "Pentecostal", occupation: "Teacher", gender: "bride", photoURL: "https://picsum.photos/seed/marry4/600/800", bio: "Lover of worship and missions. Ready for a Christ-centered home." },
-      { uid: "sample4", displayName: "Joshua Paul", age: 31, location: "Atlanta, GA", denomination: "Anglican", occupation: "Doctor", gender: "groom", photoURL: "https://picsum.photos/seed/marry5/600/800", bio: "Committed to service and tradition. Seeking a virtuous woman." },
+      { uid: "sample1", displayName: "Sarah Grace", age: 24, location: "Nashville, TN", denomination: "Baptist", occupation: "Nurse", gender: "Female", photoURL: "https://picsum.photos/seed/marry2/600/800", bio: "A daughter of the King seeking a partner who loves the Word." },
+      { uid: "sample2", displayName: "Michael David", age: 29, location: "Dallas, TX", denomination: "Catholic", occupation: "Architect", gender: "Male", photoURL: "https://picsum.photos/seed/marry3/600/800", bio: "Faith, family, and football. Seeking my partner in ministry." },
+      { uid: "sample3", displayName: "Hannah Joy", age: 26, location: "Charlotte, NC", denomination: "Pentecostal", occupation: "Teacher", gender: "Female", photoURL: "https://picsum.photos/seed/marry4/600/800", bio: "Lover of worship and missions. Ready for a Christ-centered home." },
+      { uid: "sample4", displayName: "Joshua Paul", age: 31, location: "Atlanta, GA", denomination: "Anglican", occupation: "Doctor", gender: "Male", photoURL: "https://picsum.photos/seed/marry5/600/800", bio: "Committed to service and tradition. Seeking a virtuous woman." },
     ];
 
     for (const s of samples) {
@@ -208,8 +208,8 @@ export default function MatchesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any</SelectItem>
-                      <SelectItem value="bride">A Bride</SelectItem>
-                      <SelectItem value="groom">A Groom</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

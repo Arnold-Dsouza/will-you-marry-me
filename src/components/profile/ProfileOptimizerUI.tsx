@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, Users, Coffee, Utensils, MapPin } from "lucide-react";
+import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -38,7 +38,7 @@ export function ProfileOptimizerUI() {
     displayName: "",
     photoURL: "",
     age: "",
-    gender: "bride",
+    gender: "Female",
     profileCreatedBy: "Self",
     maritalStatus: "Never Married",
     motherTongue: "",
@@ -70,7 +70,7 @@ export function ProfileOptimizerUI() {
         displayName: profile.displayName || user?.displayName || "",
         photoURL: profile.photoURL || user?.photoURL || "",
         age: profile.age?.toString() || "",
-        gender: profile.gender || "bride",
+        gender: profile.gender || "Female",
         profileCreatedBy: profile.profileCreatedBy || "Self",
         maritalStatus: profile.maritalStatus || "Never Married",
         motherTongue: profile.motherTongue || "",
@@ -237,8 +237,8 @@ export function ProfileOptimizerUI() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bride">Bride</SelectItem>
-                    <SelectItem value="groom">Groom</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Male">Male</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

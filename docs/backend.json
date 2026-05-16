@@ -11,7 +11,7 @@
         "email": { "type": "string" },
         "photoURL": { "type": "string" },
         "age": { "type": "number" },
-        "gender": { "type": "string", "enum": ["bride", "groom"] },
+        "gender": { "type": "string", "enum": ["Male", "Female"] },
         "profileCreatedBy": { "type": "string", "enum": ["Self", "Parents", "Sibling", "Relative", "Friend"] },
         "maritalStatus": { "type": "string", "enum": ["Never Married", "Widowed", "Divorced", "Awaiting Divorce"] },
         "motherTongue": { "type": "string" },

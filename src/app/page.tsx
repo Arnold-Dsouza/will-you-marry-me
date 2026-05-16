@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -29,7 +30,7 @@ export default function Home() {
   const { toast } = useToast();
 
   const [searchParams, setSearchParams] = useState({
-    gender: "bride",
+    gender: "Female",
     ageFrom: "22",
     ageTo: "30",
     denomination: "any",
@@ -60,7 +61,6 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-grow">
-        {/* Hero Section with Quick Search */}
         <section className="relative min-h-[85vh] flex items-center pt-20 pb-12">
           <div className="absolute inset-0 z-0">
              <Image
@@ -84,7 +84,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Quick Search Widget */}
             <Card className="max-w-5xl mx-auto border-none shadow-2xl bg-white/80 backdrop-blur-xl p-2 rounded-[2rem]">
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <div className="space-y-2">
@@ -97,8 +96,8 @@ export default function Home() {
                       <SelectValue placeholder="Gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bride">A Bride</SelectItem>
-                      <SelectItem value="groom">A Groom</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -174,7 +173,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trust Indicators */}
         <section className="py-12 bg-primary/5 border-y">
           <div className="container mx-auto px-4 flex flex-wrap justify-center gap-8 md:gap-24">
             <div className="flex items-center gap-3">
@@ -207,7 +205,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Section */}
         <section className="py-24">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
@@ -249,7 +246,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Success Stories Section */}
         <section className="py-24 bg-muted/30 overflow-hidden">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
@@ -291,7 +287,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Mobile App CTA */}
         <section className="py-24">
           <div className="container mx-auto px-4">
             <div className="bg-primary rounded-[3rem] p-12 md:p-20 text-primary-foreground flex flex-col md:flex-row items-center gap-12 overflow-hidden relative">
@@ -324,7 +319,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-primary">
                 <Heart className="w-4 h-4 fill-current" />
               </div>
-              <span className="font-headline text-2xl font-bold tracking-tight">Will You Marry Me</span>
+              <span className="font-headline text-2xl font-bold tracking-tight text-primary">Will You Marry Me</span>
             </Link>
             <p className="max-w-md text-primary-foreground/70 leading-relaxed">
               The world's premier platform for intentional Christian matrimonial services. Built on faith, secured by technology, and blessed by community.
