@@ -4,7 +4,6 @@
 import { useState, useMemo, Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   Select,
   SelectContent,
@@ -17,10 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, Heart } from "lucide-react";
+import { MapPin, Church, Briefcase, Loader2, MessageCircle, ArrowRight, Sparkles, Heart } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
-import { collection, addDoc, serverTimestamp, setDoc, doc, query, where } from "firebase/firestore";
+import { collection, query, where, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -75,12 +74,17 @@ function MatchesContent() {
   const filteredMatches = useMemo(() => {
     if (!allUsers) return [];
     return allUsers.filter((m: any) => {
+      // Don't show current user
       if (m.uid === user?.uid) return false;
+      
+      // Filter by interest already sent
       const alreadySent = sentInterests?.some((i: any) => i.receiverId === m.uid);
       if (alreadySent) return false;
 
+      // Apply UI filters
       if (filters.gender !== "any" && m.gender !== filters.gender) return false;
       if (filters.denomination !== "any" && m.denomination !== filters.denomination) return false;
+      
       return true;
     });
   }, [allUsers, user, filters, sentInterests]);
@@ -100,38 +104,28 @@ function MatchesContent() {
     }
     if (!db) return;
 
-    addDoc(collection(db, "interests"), {
+    // Use Firestore SDK correctly without await as per guidelines
+    const interestsRef = collection(db, "interests");
+    const interestData = {
       senderId: user.uid,
       senderName: user.displayName || "A Member",
       receiverId: match.uid,
-      timestamp: serverTimestamp(),
+      timestamp: new Date().toISOString(),
       status: "pending"
-    }).then(() => {
-      toast({
-        title: "Interest Expressed!",
-        description: `We've notified ${match.displayName || 'this member'} of your interest.`,
+    };
+
+    import("firebase/firestore").then(({ addDoc }) => {
+      addDoc(interestsRef, interestData).then(() => {
+        toast({
+          title: "Interest Expressed!",
+          description: `We've notified ${match.displayName || 'this member'} of your interest.`,
+        });
       });
     });
   };
 
   const handleStartChat = (match: any) => {
     router.push(`/messages?userId=${match.uid}`);
-  };
-
-  const seedSampleData = async () => {
-    if (!db) return;
-    
-    const samples = [
-      { uid: "sample1", displayName: "Sarah Grace", age: 24, location: "Nashville, TN", denomination: "Baptist", occupation: "Nurse", gender: "Female", photoURL: "https://picsum.photos/seed/marry2/600/800", bio: "A daughter of the King seeking a partner who loves the Word." },
-      { uid: "sample2", displayName: "Michael David", age: 29, location: "Dallas, TX", denomination: "Catholic", occupation: "Architect", gender: "Male", photoURL: "https://picsum.photos/seed/marry3/600/800", bio: "Faith, family, and football. Seeking my partner in ministry." },
-      { uid: "sample3", displayName: "Hannah Joy", age: 26, location: "Charlotte, NC", denomination: "Pentecostal", occupation: "Teacher", gender: "Female", photoURL: "https://picsum.photos/seed/marry4/600/800", bio: "Lover of worship and missions. Ready for a Christ-centered home." },
-      { uid: "sample4", displayName: "Joshua Paul", age: 31, location: "Atlanta, GA", denomination: "Anglican", occupation: "Doctor", gender: "Male", photoURL: "https://picsum.photos/seed/marry5/600/800", bio: "Committed to service and tradition. Seeking a virtuous woman." },
-    ];
-
-    for (const s of samples) {
-      setDoc(doc(db, "users", s.uid), s, { merge: true });
-    }
-    toast({ title: "Samples added", description: "The community is growing!" });
   };
 
   return (
@@ -183,14 +177,6 @@ function MatchesContent() {
                 )}
               </TabsTrigger>
             </TabsList>
-
-            <div className="flex items-center gap-3">
-              {user && (
-                <Button variant="outline" size="sm" onClick={seedSampleData} className="rounded-full h-10 px-4">
-                  <UserPlus className="w-4 h-4 mr-2" /> Seed community
-                </Button>
-              )}
-            </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">

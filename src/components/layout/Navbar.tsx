@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -43,7 +44,7 @@ export function Navbar() {
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-          await setDoc(docRef, {
+          setDoc(docRef, {
             uid: user.uid,
             displayName: user.displayName,
             email: user.email,
@@ -130,7 +131,7 @@ export function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold hidden sm:flex">
+                <Button variant="ghost" size="sm" className="rounded-full px-6 font-bold flex">
                   Login
                 </Button>
               </Link>
