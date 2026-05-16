@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -15,9 +16,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Filter, Heart, MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Filter, Heart, MapPin, Church, Briefcase, Loader2, UserPlus, MessageCircle, ArrowRight, Sparkles, UserCheck } from "lucide-react";
 import Image from "next/image";
-import { useFirestore, useCollection, useUser } from "@/firebase";
+import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -44,6 +46,14 @@ export default function MatchesPage() {
     return collection(db, "users");
   }, [db]);
 
+  const currentUserRef = useMemo(() => {
+    if (!db || !user) return null;
+    return doc(db, "users", user.uid);
+  }, [db, user]);
+
+  const { data: allUsers, loading: usersLoading } = useCollection(usersQuery);
+  const { data: profile } = useDoc(currentUserRef);
+
   const receivedInterestsQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(collection(db, "interests"), where("receiverId", "==", user.uid));
@@ -54,16 +64,24 @@ export default function MatchesPage() {
     return query(collection(db, "interests"), where("senderId", "==", user.uid));
   }, [db, user]);
 
-  const { data: allUsers, loading: usersLoading } = useCollection(usersQuery);
   const { data: receivedInterests } = useCollection(receivedInterestsQuery);
   const { data: sentInterests } = useCollection(sentInterestsQuery);
+
+  // Profile completion calculation
+  const completion = useMemo(() => {
+    if (!profile) return 0;
+    const fields = ['displayName', 'age', 'gender', 'location', 'denomination', 'bio', 'photoURL', 'faithDetails'];
+    const filled = fields.filter(f => profile[f] && profile[f] !== "" && profile[f] !== "any");
+    return Math.round((filled.length / fields.length) * 100);
+  }, [profile]);
+
+  const isProfileComplete = completion >= 100;
 
   // Client-side filtering for Discover tab
   const filteredMatches = useMemo(() => {
     if (!allUsers) return [];
     return allUsers.filter((m: any) => {
       if (m.uid === user?.uid) return false;
-      // Filter out people we already sent interest to for the Discover tab
       const alreadySent = sentInterests?.some((i: any) => i.receiverId === m.uid);
       if (alreadySent) return false;
 
@@ -126,10 +144,38 @@ export default function MatchesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-muted/20 pb-20">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Profile Completion Callout */}
+        {user && !isProfileComplete && (
+          <Card className="mb-12 border-none shadow-xl bg-primary text-primary-foreground overflow-hidden rounded-[2.5rem] relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 relative z-10">
+              <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center shrink-0">
+                <Sparkles className="w-10 h-10 text-white" />
+              </div>
+              <div className="flex-grow space-y-2 text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-headline font-bold">Complete Your Spiritual Identity</h3>
+                <p className="opacity-80 max-w-xl">
+                  Profiles with 100% completion receive 5x more intentional interest. Express your faith journey to find your God-ordained partner.
+                </p>
+                <div className="pt-4 max-w-md mx-auto md:mx-0">
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="text-xs font-bold uppercase tracking-widest">Profile Strength</span>
+                     <span className="text-xs font-bold">{completion}%</span>
+                   </div>
+                   <Progress value={completion} className="h-2 bg-white/20" />
+                </div>
+              </div>
+              <Button size="lg" className="rounded-full h-14 px-8 bg-white text-primary hover:bg-white/90 font-bold shadow-2xl" asChild>
+                <Link href="/profile">Finish Profile <ArrowRight className="ml-2 w-4 h-4" /></Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="discover" className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -208,6 +254,13 @@ export default function MatchesPage() {
 
             {/* Content Area */}
             <div className="flex-grow">
+              {!isProfileComplete && (
+                <div className="mb-8 p-4 bg-accent/5 border border-accent/20 rounded-2xl flex items-center gap-3 text-sm text-accent">
+                  <UserCheck className="w-5 h-5" />
+                  <span>Some matches might be hidden until your profile is fully complete.</span>
+                </div>
+              )}
+
               <TabsContent value="discover" className="m-0">
                 {usersLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
