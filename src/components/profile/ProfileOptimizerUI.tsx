@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin } from "lucide-react";
+import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin, Camera, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -30,6 +30,7 @@ export function ProfileOptimizerUI() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AIProfileOptimizerOutput | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemo(() => user && db ? doc(db, "users", user.uid) : null, [user, db]);
   const { data: profile } = useDoc(userDocRef);
@@ -167,6 +168,30 @@ export function ProfileOptimizerUI() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Please select an image smaller than 2MB."
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
+        toast({
+          title: "Photo Ready",
+          description: "Don't forget to save your profile to keep the photo."
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="space-y-12">
       <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2.5rem]">
@@ -200,21 +225,53 @@ export function ProfileOptimizerUI() {
             <CardHeader className="bg-primary/5 pb-8">
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
                 <div className="relative group w-32 h-32">
-                  <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+                  <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-white shadow-lg relative">
                     {formData.photoURL ? (
                       <Image src={formData.photoURL} alt="Profile" fill className="object-cover" />
                     ) : (
                       <User className="w-12 h-12 text-muted-foreground" />
                     )}
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                    >
+                      <Camera className="w-6 h-6" />
+                    </button>
                   </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange}
+                  />
                 </div>
                 <div className="flex-grow space-y-2 text-center md:text-left">
                   <CardTitle className="text-3xl font-headline font-bold">Basic Information</CardTitle>
                   <CardDescription>Core identity details for matrimonial intent.</CardDescription>
+                  <div className="pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-full gap-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4" /> Upload Photo
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Photo URL (Optional)</Label>
+                <Input 
+                  placeholder="https://example.com/photo.jpg" 
+                  value={formData.photoURL} 
+                  onChange={(e) => setFormData(p => ({ ...p, photoURL: e.target.value }))} 
+                  className="rounded-xl h-12" 
+                />
+              </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><UserCircle className="w-4 h-4 text-primary" /> Profile Created By</Label>
                 <Select value={formData.profileCreatedBy} onValueChange={(val) => setFormData(p => ({ ...p, profileCreatedBy: val }))}>
