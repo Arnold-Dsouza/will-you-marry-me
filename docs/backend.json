@@ -19,7 +19,9 @@
         "maritalStatus": { "type": "string" },
         "bio": { "type": "string" },
         "faithDetails": { "type": "string" },
-        "personalityTraits": { "type": "array", "items": { "type": "string" } }
+        "personalityTraits": { "type": "array", "items": { "type": "string" } },
+        "targetAudienceDescription": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email"]
     },
@@ -29,11 +31,24 @@
       "type": "object",
       "properties": {
         "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
         "receiverId": { "type": "string" },
         "text": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["senderId", "receiverId", "text", "timestamp"]
+    },
+    "Interest": {
+      "title": "Interest",
+      "description": "An expression of interest from one user to another.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverId", "status", "timestamp"]
     }
   },
   "auth": {
@@ -47,6 +62,10 @@
     "/messages/{messageId}": {
       "schema": "Message",
       "description": "Direct messages between users."
+    },
+    "/interests/{interestId}": {
+      "schema": "Interest",
+      "description": "Tracking expressions of interest between members."
     }
   }
 }

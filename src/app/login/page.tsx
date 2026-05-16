@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -33,14 +32,9 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
 
-  // Sync state with URL parameters
   useEffect(() => {
     const mode = searchParams.get("mode");
-    if (mode === "signup") {
-      setIsSignUp(true);
-    } else {
-      setIsSignUp(false);
-    }
+    setIsSignUp(mode === "signup");
   }, [searchParams]);
 
   useEffect(() => {
@@ -56,7 +50,7 @@ function LoginContent() {
       toast({
         variant: "destructive",
         title: "Firebase not initialized",
-        description: "Please check that your environment variables (NEXT_PUBLIC_FIREBASE_*) are set correctly in .env.",
+        description: "Credentials missing in src/firebase/config.ts",
       });
       return;
     }
@@ -65,7 +59,7 @@ function LoginContent() {
       toast({
         variant: "destructive",
         title: "Name required",
-        description: "Please enter your full name for the sign-up process.",
+        description: "Please enter your full name.",
       });
       return;
     }
@@ -79,26 +73,23 @@ function LoginContent() {
         toast({ title: "Account created!", description: "Welcome to Will You Marry Me." });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        toast({ title: "Welcome back!", description: "You have successfully logged in." });
+        toast({ title: "Welcome back!", description: "Logged in successfully." });
       }
       router.push("/profile");
     } catch (error: any) {
+      console.error("Auth error:", error);
       let errorMsg = error.message;
       if (error.code === 'auth/operation-not-allowed') {
-        errorMsg = "This login method is not enabled in Firebase Console. Go to Authentication > Sign-in method.";
+        errorMsg = "Enable this method in Firebase Console > Authentication.";
       } else if (error.code === 'auth/email-already-in-use') {
-        errorMsg = "This email is already registered. Try logging in instead.";
+        errorMsg = "Email already in use. Try logging in.";
       } else if (error.code === 'auth/weak-password') {
-        errorMsg = "Password should be at least 6 characters.";
-      } else if (error.code === 'auth/invalid-credential') {
-        errorMsg = "Invalid email or password. Please try again.";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMsg = "Sign-in popup was closed before completion.";
+        errorMsg = "Password must be at least 6 characters.";
       }
       
       toast({ 
         variant: "destructive", 
-        title: isSignUp ? "Sign up failed" : "Login failed", 
+        title: "Authentication Failed", 
         description: errorMsg 
       });
     } finally {
@@ -107,25 +98,16 @@ function LoginContent() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
-      toast({
-        variant: "destructive",
-        title: "Firebase not initialized",
-        description: "Please check your .env configuration.",
-      });
-      return;
-    }
-    
+    if (!auth) return;
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast({ title: "Success!", description: "Signed in with Google." });
       router.push("/profile");
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
-        title: "Google login failed", 
+        title: "Google Login Failed", 
         description: error.message 
       });
     } finally {
@@ -137,171 +119,135 @@ function LoginContent() {
     return (
       <div className="p-8 text-center space-y-4 max-w-md bg-white rounded-3xl shadow-xl">
         <AlertTriangle className="w-12 h-12 text-destructive mx-auto" />
-        <h2 className="text-xl font-bold">Firebase Configuration Error</h2>
-        <p className="text-sm text-muted-foreground">
-          It looks like your Firebase API keys are missing or incorrect.<br/>
-          Make sure your <code>.env</code> file has variables starting with <code>NEXT_PUBLIC_FIREBASE_</code>.
-        </p>
-        <Button variant="outline" className="rounded-full" onClick={() => window.location.reload()}>Retry Connection</Button>
+        <h2 className="text-xl font-bold">Configuration Error</h2>
+        <p className="text-sm text-muted-foreground">Check your Firebase API keys.</p>
+        <Button variant="outline" className="rounded-full" onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none animate-in fade-in zoom-in-95 duration-500">
-      {/* Visual Side */}
+    <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none">
+      {/* Hero Visual */}
       <div className="relative hidden md:block bg-primary overflow-hidden">
         <Image 
-          src="https://picsum.photos/seed/login-church-visual/800/1200" 
-          alt="Church Marriage" 
+          src="https://picsum.photos/seed/marry-login/800/1200" 
+          alt="Matrimony" 
           fill 
-          className="object-cover opacity-60 mix-blend-overlay"
-          data-ai-hint="church wedding"
+          className="object-cover opacity-50"
+          data-ai-hint="wedding couple"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-transparent" />
-        <div className="absolute bottom-12 left-12 right-12 text-white space-y-6">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary">
-            <Heart className="w-6 h-6 fill-current" />
-          </div>
-          <h2 className="text-4xl font-headline font-bold leading-tight">
-            Start Your God-Ordained Journey Today.
-          </h2>
-          <p className="text-lg opacity-90 font-body">
-            Join thousands of intentional Christian singles looking for a Christ-centered home.
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent" />
+        <div className="absolute bottom-12 left-12 right-12 text-white">
+          <Heart className="w-12 h-12 mb-6 fill-current" />
+          <h2 className="text-4xl font-headline font-bold mb-4">Start Your God-Ordained Journey.</h2>
+          <p className="text-lg opacity-90">Find someone who shares your heart for the Lord.</p>
         </div>
       </div>
 
-      {/* Form Side */}
-      <div className="p-8 md:p-16 flex flex-col justify-center">
-        <Card className="border-none shadow-none bg-transparent">
-          <CardHeader className="p-0 space-y-2 mb-8">
-            <CardTitle className="text-3xl font-headline font-bold text-primary">
-              {isSignUp ? "Create intentional account" : "Welcome back"}
-            </CardTitle>
-            <CardDescription className="text-base">
-              {isSignUp 
-                ? "Begin your search for a life partner with faith at the center." 
-                : "Log in to continue your intentional conversations."}
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="p-0 space-y-6">
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      id="name" 
-                      placeholder="John Doe" 
-                      className="pl-11 h-12 rounded-xl bg-muted/30 border-none"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      autoComplete="name"
-                    />
-                  </div>
-                </div>
-              )}
-              
+      {/* Auth Form */}
+      <div className="p-8 md:p-16 flex flex-col justify-center bg-background/50">
+        <div className="max-w-sm mx-auto w-full space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-headline font-bold text-primary">
+              {isSignUp ? "Join Our Community" : "Welcome Back"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isSignUp ? "Create an intentional account today." : "Log in to continue your search."}
+            </p>
+          </div>
+
+          <form onSubmit={handleEmailAuth} className="space-y-4">
+            {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                   <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@example.com" 
-                    className="pl-11 h-12 rounded-xl bg-muted/30 border-none"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
+                    id="name" 
+                    placeholder="Enter your name" 
+                    className="pl-10 h-11 rounded-xl"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="password">Password</Label>
-                  {!isSignUp && (
-                    <Button variant="link" type="button" className="text-xs p-0 h-auto text-muted-foreground">
-                      Forgot Password?
-                    </Button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    className="pl-11 h-12 rounded-xl bg-muted/30 border-none"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete={isSignUp ? "new-password" : "current-password"}
-                  />
-                </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="name@example.com" 
+                  className="pl-10 h-11 rounded-xl"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 rounded-xl font-bold text-base shadow-lg transition-all hover:scale-[1.02] bg-primary text-white"
-                disabled={loading}
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                  <>
-                    {isSignUp ? "Sign Up Now" : "Sign In"}
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-muted" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-4 text-muted-foreground font-bold">Or continue with</span>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="pl-10 h-11 rounded-xl"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
             </div>
 
             <Button 
-              variant="outline" 
-              className="w-full h-12 rounded-xl font-bold border-muted-foreground/20 hover:bg-muted/10 flex items-center justify-center gap-3"
-              onClick={handleGoogleLogin}
+              type="submit" 
+              className="w-full h-11 rounded-xl font-bold shadow-md"
               disabled={loading}
-              type="button"
             >
-              <Image 
-                src="https://images.unsplash.com/gh/nextauthjs/next-auth/main/packages/next-auth/provider-logos/google.svg" 
-                alt="Google" 
-                width={20} 
-                height={20} 
-              />
-              Sign in with Google
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                <>
+                  {isSignUp ? "Sign Up Now" : "Sign In"}
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </>
+              )}
             </Button>
-          </CardContent>
+          </form>
 
-          <CardFooter className="p-0 pt-8 justify-center">
-            <div className="text-sm text-muted-foreground">
-              {isSignUp ? "Already have an account?" : "Don't have an account yet?"}
-              <button 
-                type="button"
-                onClick={() => {
-                  const newMode = !isSignUp ? 'signup' : 'login';
-                  router.push(`/login?mode=${newMode}`);
-                }}
-                className="ml-2 text-primary font-bold hover:underline"
-              >
-                {isSignUp ? "Sign In" : "Register Free"}
-              </button>
-            </div>
-          </CardFooter>
-        </Card>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="w-full h-11 rounded-xl font-bold"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          >
+            <Image 
+              src="https://images.unsplash.com/gh/nextauthjs/next-auth/main/packages/next-auth/provider-logos/google.svg" 
+              alt="Google" width={18} height={18} className="mr-2" 
+            />
+            Continue with Google
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            {isSignUp ? "Already have an account?" : "Don't have an account?"}
+            <button 
+              onClick={() => router.push(`/login?mode=${isSignUp ? 'login' : 'signup'}`)}
+              className="ml-1 text-primary font-bold hover:underline"
+            >
+              {isSignUp ? "Sign In" : "Register Free"}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -309,15 +255,10 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-muted/20">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow flex items-center justify-center p-4 py-12">
-        <Suspense fallback={
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="animate-spin text-primary w-12 h-12" />
-            <p className="text-muted-foreground font-bold">Loading secure portal...</p>
-          </div>
-        }>
+      <main className="flex-grow flex items-center justify-center p-4">
+        <Suspense fallback={<Loader2 className="animate-spin" />}>
           <LoginContent />
         </Suspense>
       </main>
