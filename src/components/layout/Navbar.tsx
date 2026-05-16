@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut } from "lucide-react";
-import { useAuth, useUser, useFirestore } from "@/firebase";
+import { useAuth, useUser, useFirestore, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import Image from "next/image";
 
 const navItems = [
   { name: "Matches", href: "/matches", icon: Search },
@@ -26,22 +27,30 @@ export function Navbar() {
   const db = useFirestore();
   const { toast } = useToast();
 
-  // Sync user profile to Firestore on login
+  // Fetch the user's custom profile from Firestore for the photo
+  const userDocRef = useMemo(() => {
+    if (!user || !db) return null;
+    return doc(db, "users", user.uid);
+  }, [user, db]);
+
+  const { data: profile } = useDoc(userDocRef);
+
+  // Sync user profile to Firestore on login if it doesn't exist
   useEffect(() => {
     async function syncProfile() {
       if (user && db) {
-        const userDocRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userDocRef);
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-          await setDoc(userDocRef, {
+          await setDoc(docRef, {
             uid: user.uid,
             displayName: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
             updatedAt: serverTimestamp(),
-            gender: "any", // Default
-            denomination: "any", // Default
+            gender: "any",
+            denomination: "any",
             bio: "Excited to join this intentional community!"
           }, { merge: true });
         }
@@ -59,6 +68,8 @@ export function Navbar() {
       toast({ variant: "destructive", title: "Logout failed", description: error.message });
     }
   };
+
+  const displayPhoto = profile?.photoURL || user?.photoURL;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
@@ -96,9 +107,18 @@ export function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               <Link href="/profile">
-                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold hover:bg-primary/5">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
-                    {user.photoURL ? <Image src={user.photoURL} alt="" width={24} height={24} /> : <User className="w-3 h-3 text-primary" />}
+                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold hover:bg-primary/5 p-1 pr-4">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20 relative">
+                    {displayPhoto ? (
+                      <Image 
+                        src={displayPhoto} 
+                        alt="Profile" 
+                        fill 
+                        className="object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-primary" />
+                    )}
                   </div>
                   <span className="hidden md:inline">{user.displayName?.split(' ')[0] || "Profile"}</span>
                 </Button>
