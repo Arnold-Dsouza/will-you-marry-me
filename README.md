@@ -1,3 +1,4 @@
+
 # Will You Marry Me | Christian Matrimony
 
 A modern, faith-first Christian matrimonial platform built with Next.js, Firebase, and GenAI.
@@ -37,6 +38,23 @@ To upload this project to your GitHub account, follow these steps in your termin
    git branch -M main
    git push -u origin main
    ```
+
+## Deployment to Vercel
+
+Once your code is on GitHub, follow these steps:
+
+1. **Login to Vercel**: Go to [vercel.com](https://vercel.com) and sign in with your GitHub account.
+2. **Import Project**: Click "Add New" -> "Project" and select your `will-you-marry-me` repository.
+3. **Configure Environment Variables**:
+   In the "Environment Variables" section, add the following (copy the values from your `src/firebase/config.ts` or `.env`):
+   - `GOOGLE_GENAI_API_KEY`: Your Gemini API Key (required for AI features).
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`: Your Firebase API Key.
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Your Firebase Auth Domain.
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: Your Firebase Project ID.
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Your Firebase Storage Bucket.
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: Your Messaging Sender ID.
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`: Your Firebase App ID.
+4. **Deploy**: Click "Deploy". Vercel will build and host your app.
 
 ## Local Development
 
