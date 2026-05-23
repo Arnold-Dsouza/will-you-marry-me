@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
-import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin, Camera, Upload } from "lucide-react";
+import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin, Camera, Upload, BookOpen, Handshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -63,6 +63,8 @@ export function ProfileOptimizerUI() {
     smokingHabits: "No",
     rawBio: "",
     faithDetails: "",
+    ministryInvolvement: "",
+    favoriteVerse: "",
     personalityTraits: [] as string[],
     targetAudienceDescription: "",
   });
@@ -95,6 +97,8 @@ export function ProfileOptimizerUI() {
         smokingHabits: profile.smokingHabits || "No",
         rawBio: profile.bio || "",
         faithDetails: profile.faithDetails || "",
+        ministryInvolvement: profile.ministryInvolvement || "",
+        favoriteVerse: profile.favoriteVerse || "",
         personalityTraits: profile.personalityTraits || [],
         targetAudienceDescription: profile.targetAudienceDescription || "",
       });
@@ -102,7 +106,7 @@ export function ProfileOptimizerUI() {
   }, [profile, user]);
 
   const completion = useMemo(() => {
-    const criticalFields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'photoURL', 'faithDetails', 'maritalStatus', 'motherTongue'];
+    const criticalFields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'photoURL', 'faithDetails', 'favoriteVerse'];
     const filled = criticalFields.filter(f => formData[f as keyof typeof formData] && formData[f as keyof typeof formData] !== "" && formData[f as keyof typeof formData] !== "any");
     return Math.round((filled.length / criticalFields.length) * 100);
   }, [formData]);
@@ -159,7 +163,7 @@ export function ProfileOptimizerUI() {
 
     setDoc(doc(db, "users", user.uid), updatedData, { merge: true })
       .then(() => {
-        toast({ title: "Profile Saved", description: "Your spiritual identity has been updated and is now visible to others." });
+        toast({ title: "Profile Saved", description: "Your spiritual identity has been updated." });
         if (bioToSave) {
           setFormData(prev => ({ ...prev, rawBio: bioToSave }));
         }
@@ -192,10 +196,7 @@ export function ProfileOptimizerUI() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
-        toast({
-          title: "Photo Ready",
-          description: "Don't forget to save your profile to keep the photo."
-        });
+        toast({ title: "Photo Ready", description: "Save profile to keep the photo." });
       };
       reader.readAsDataURL(file);
     }
@@ -216,11 +217,11 @@ export function ProfileOptimizerUI() {
            <div className="flex-grow space-y-4">
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
-                 <h2 className="text-2xl font-headline font-bold">Spiritual Maturity Progress</h2>
-                 <p className="text-muted-foreground text-sm">Detailed profiles are essential for God-ordained matchmaking.</p>
+                 <h2 className="text-2xl font-headline font-bold">Soulmate Match Strength</h2>
+                 <p className="text-muted-foreground text-sm">Deepen your profile to find a God-ordained partner.</p>
                </div>
                <Badge className={`${completion === 100 ? 'bg-green-500' : 'bg-primary'} text-white px-4 py-1.5 rounded-full font-bold`}>
-                 {completion === 100 ? 'Fully Intentional' : 'Nurturing Profile'}
+                 {completion === 100 ? 'Spiritually Ready' : 'In Preparation'}
                </Badge>
              </div>
              <Progress value={completion} className="h-3 bg-muted" />
@@ -247,61 +248,30 @@ export function ProfileOptimizerUI() {
                       <Camera className="w-6 h-6" />
                     </button>
                   </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={handleFileChange}
-                  />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                 </div>
                 <div className="flex-grow space-y-2 text-center md:text-left">
-                  <CardTitle className="text-3xl font-headline font-bold">Basic Information</CardTitle>
-                  <CardDescription>Core identity details for matrimonial intent.</CardDescription>
-                  <div className="pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-full gap-2"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="w-4 h-4" /> Upload Photo
-                    </Button>
-                  </div>
+                  <CardTitle className="text-3xl font-headline font-bold">Soulmate Identity</CardTitle>
+                  <CardDescription>Present your authentic self to the community.</CardDescription>
+                  <Button variant="outline" size="sm" className="rounded-full gap-2 mt-2" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="w-4 h-4" /> Change Portrait
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 md:col-span-2">
-                <Label>Photo URL (Optional)</Label>
-                <Input 
-                  placeholder="https://example.com/photo.jpg" 
-                  value={formData.photoURL} 
-                  onChange={(e) => setFormData(p => ({ ...p, photoURL: e.target.value }))} 
-                  className="rounded-xl h-12" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><UserCircle className="w-4 h-4 text-primary" /> Profile Created By</Label>
-                <Select value={formData.profileCreatedBy} onValueChange={(val) => setFormData(p => ({ ...p, profileCreatedBy: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Self", "Parents", "Sibling", "Relative", "Friend"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-2">
                 <Label>Full Name</Label>
                 <Input value={formData.displayName} onChange={(e) => setFormData(p => ({ ...p, displayName: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
+                <Label>Age</Label>
+                <Input type="number" value={formData.age} onChange={(e) => setFormData(p => ({ ...p, age: e.target.value }))} className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
                 <Label>Gender</Label>
                 <Select value={formData.gender} onValueChange={(val) => setFormData(p => ({ ...p, gender: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Female">Female</SelectItem>
                     <SelectItem value="Male">Male</SelectItem>
@@ -309,95 +279,69 @@ export function ProfileOptimizerUI() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Age</Label>
-                <Input type="number" value={formData.age} onChange={(e) => setFormData(p => ({ ...p, age: e.target.value }))} className="rounded-xl h-12" />
+                <Label>Location</Label>
+                <Input placeholder="City, State" value={formData.location} onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))} className="rounded-xl h-12" />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Heart className="w-4 h-4 text-primary" /> Marital Status</Label>
+                <Label>Marital Status</Label>
                 <Select value={formData.maritalStatus} onValueChange={(val) => setFormData(p => ({ ...p, maritalStatus: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {["Never Married", "Widowed", "Divorced", "Awaiting Divorce"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Mother Tongue</Label>
-                <Input placeholder="e.g. English" value={formData.motherTongue} onChange={(e) => setFormData(p => ({ ...p, motherTongue: e.target.value }))} className="rounded-xl h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Ruler className="w-4 h-4 text-primary" /> Height</Label>
-                <Input placeholder="e.g. 5 ft 10 in" value={formData.height} onChange={(e) => setFormData(p => ({ ...p, height: e.target.value }))} className="rounded-xl h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> Location</Label>
-                <Input placeholder="City, State" value={formData.location} onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))} className="rounded-xl h-12" />
+                <Label>Mother Tongue</Label>
+                <Input value={formData.motherTongue} onChange={(e) => setFormData(p => ({ ...p, motherTongue: e.target.value }))} className="rounded-xl h-12" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
             <CardHeader>
-              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Church className="w-6 h-6 text-primary" /> Religious Information</CardTitle>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Church className="w-6 h-6 text-primary" /> Spiritual Depth</CardTitle>
             </CardHeader>
-            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Denomination</Label>
-                <Select value={formData.denomination} onValueChange={(val) => setFormData(p => ({ ...p, denomination: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Interdenominational</SelectItem>
-                    <SelectItem value="Catholic">Catholic</SelectItem>
-                    <SelectItem value="Baptist">Baptist</SelectItem>
-                    <SelectItem value="Pentecostal">Pentecostal</SelectItem>
-                    <SelectItem value="Anglican">Anglican</SelectItem>
-                    <SelectItem value="Orthodox">Orthodox</SelectItem>
-                  </SelectContent>
-                </Select>
+            <CardContent className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Denomination</Label>
+                  <Select value={formData.denomination} onValueChange={(val) => setFormData(p => ({ ...p, denomination: val }))}>
+                    <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Interdenominational</SelectItem>
+                      <SelectItem value="Catholic">Catholic</SelectItem>
+                      <SelectItem value="Baptist">Baptist</SelectItem>
+                      <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                      <SelectItem value="Anglican">Anglican</SelectItem>
+                      <SelectItem value="Orthodox">Orthodox</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" /> Favorite Bible Verse</Label>
+                  <Input placeholder="e.g., Philippians 4:13" value={formData.favoriteVerse} onChange={(e) => setFormData(p => ({ ...p, favoriteVerse: e.target.value }))} className="rounded-xl h-12" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Diocese</Label>
-                <Input value={formData.diocese} onChange={(e) => setFormData(p => ({ ...p, diocese: e.target.value }))} className="rounded-xl h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label>Parish / Church Home</Label>
-                <Input value={formData.parish} onChange={(e) => setFormData(p => ({ ...p, parish: e.target.value }))} className="rounded-xl h-12" />
+                <Label className="flex items-center gap-2"><Handshake className="w-4 h-4 text-primary" /> Ministry Involvement</Label>
+                <Textarea 
+                  placeholder="How do you serve in your local church?" 
+                  className="min-h-[100px] rounded-2xl resize-none" 
+                  value={formData.ministryInvolvement} 
+                  onChange={(e) => setFormData(p => ({ ...p, ministryInvolvement: e.target.value }))} 
+                />
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
             <CardHeader>
-              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Briefcase className="w-6 h-6 text-primary" /> Professional Information</CardTitle>
+              <CardTitle className="text-2xl font-headline font-bold flex items-center gap-2"><Briefcase className="w-6 h-6 text-primary" /> Life & Career</CardTitle>
             </CardHeader>
             <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-primary" /> Education</Label>
-                <Input value={formData.education} onChange={(e) => setFormData(p => ({ ...p, education: e.target.value }))} className="rounded-xl h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label>Employed In</Label>
-                <Select value={formData.employedIn} onValueChange={(val) => setFormData(p => ({ ...p, employedIn: val }))}>
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Private", "Government", "Business", "Defense", "Self Employed", "Not Employed"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Occupation</Label>
-                <Input value={formData.occupation} onChange={(e) => setFormData(p => ({ ...p, occupation: e.target.value }))} className="rounded-xl h-12" />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /> Annual Income</Label>
-                <Input value={formData.annualIncome} onChange={(e) => setFormData(p => ({ ...p, annualIncome: e.target.value }))} className="rounded-xl h-12" />
-              </div>
+              <div className="space-y-2"><Label>Education</Label><Input value={formData.education} onChange={(e) => setFormData(p => ({ ...p, education: e.target.value }))} className="rounded-xl h-12" /></div>
+              <div className="space-y-2"><Label>Occupation</Label><Input value={formData.occupation} onChange={(e) => setFormData(p => ({ ...p, occupation: e.target.value }))} className="rounded-xl h-12" /></div>
             </CardContent>
           </Card>
         </div>
@@ -408,23 +352,24 @@ export function ProfileOptimizerUI() {
             <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-accent animate-pulse" />
-                AI Bio Assistant
+                Soulmate AI Assistant
               </CardTitle>
+              <CardDescription>Let AI help you find the right words.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Bio Draft</Label>
+                <Label>Your Bio Draft</Label>
                 <Textarea
-                  placeholder="Tell us your story..."
+                  placeholder="Share your heart and vision..."
                   className="min-h-[150px] rounded-2xl p-4 bg-muted/20 border-none resize-none"
                   value={formData.rawBio}
                   onChange={(e) => setFormData(prev => ({ ...prev, rawBio: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Faith Journey Details</Label>
+                <Label>Faith Journey</Label>
                 <Textarea
-                  placeholder="How did you come to know the Lord?"
+                  placeholder="How has God transformed your life?"
                   className="min-h-[100px] rounded-2xl p-4 bg-muted/20 border-none resize-none text-xs"
                   value={formData.faithDetails}
                   onChange={(e) => setFormData(prev => ({ ...prev, faithDetails: e.target.value }))}
@@ -446,13 +391,11 @@ export function ProfileOptimizerUI() {
           {result && (
             <Card className="border-2 border-accent/20 bg-accent/5 rounded-[2.5rem] animate-in slide-in-from-right-4 duration-500">
               <CardContent className="p-6">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-accent mb-3">AI Suggestions</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-accent mb-3">Refined Spiritual Bio</h4>
                 <p className="text-sm italic font-body text-foreground/80 leading-relaxed">"{result.optimizedBio}"</p>
-                <div className="mt-6 flex flex-col gap-2">
-                  <Button size="sm" className="rounded-full bg-accent shadow-md" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
-                    Adopt AI Bio
-                  </Button>
-                </div>
+                <Button size="sm" className="w-full mt-6 rounded-full bg-accent shadow-md" onClick={() => handleSaveProfile(result.optimizedBio)} disabled={saving}>
+                  Apply AI Bio
+                </Button>
               </CardContent>
             </Card>
           )}

@@ -33,6 +33,9 @@
         "smokingHabits": { "type": "string", "enum": ["No", "Occasionally", "Yes"] },
         "bio": { "type": "string" },
         "faithDetails": { "type": "string" },
+        "spiritualGifts": { "type": "array", "items": { "type": "string" } },
+        "ministryInvolvement": { "type": "string" },
+        "favoriteVerse": { "type": "string" },
         "personalityTraits": { "type": "array", "items": { "type": "string" } },
         "targetAudienceDescription": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
