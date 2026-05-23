@@ -43,13 +43,15 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
-import { collection, query, where, doc, addDoc } from "firebase/firestore";
+import { collection, query, where, doc, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 // Helper to validate URLs to prevent next/image crashes
 const getValidImageUrl = (url: string | undefined, uid: string) => {
@@ -61,7 +63,6 @@ const getValidImageUrl = (url: string | undefined, uid: string) => {
       return url;
     }
   } catch (e) {
-    // If it's a data URI or valid path it might not parse as a full URL, but standard data: URIs usually fail URL constructor
     if (url.startsWith('data:image')) return url;
   }
   return fallback;
@@ -137,7 +138,7 @@ function MatchesContent() {
     if (!receivedInterests || !allUsers) return [];
     return receivedInterests.map((interest: any) => {
       const sender = allUsers.find((u: any) => u.uid === interest.senderId);
-      return sender ? { ...sender, interestId: interest.id, status: interest.status } : null;
+      return sender ? { ...sender, interestId: interest.id, status: interest.status, interestTimestamp: interest.timestamp } : null;
     }).filter(Boolean);
   }, [receivedInterests, allUsers]);
 
@@ -145,7 +146,7 @@ function MatchesContent() {
     if (!sentInterests || !allUsers) return [];
     return sentInterests.map((interest: any) => {
       const receiver = allUsers.find((u: any) => u.uid === interest.receiverId);
-      return receiver ? { ...receiver, interestId: interest.id, status: interest.status } : null;
+      return receiver ? { ...receiver, interestId: interest.id, status: interest.status, interestTimestamp: interest.timestamp } : null;
     }).filter(Boolean);
   }, [sentInterests, allUsers]);
 
@@ -171,6 +172,14 @@ function MatchesContent() {
           description: `We've notified ${match.displayName || 'this member'} of your interest.`,
         });
         setSelectedMatch(null);
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'interests',
+          operation: 'create',
+          requestResourceData: interestData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
   };
 
@@ -389,7 +398,7 @@ function MatchesContent() {
       <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 rounded-[2.5rem] border-none shadow-2xl">
           <DialogHeader className="sr-only">
-            <DialogTitle>{selectedMatch?.displayName || "Profile"}'s Spiritual Identity</DialogTitle>
+            <DialogTitle>{selectedMatch?.displayName || "Member"}'s Spiritual Identity</DialogTitle>
             <DialogDescription>Full profile details and faith journey.</DialogDescription>
           </DialogHeader>
           {selectedMatch && (

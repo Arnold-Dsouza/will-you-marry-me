@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export function ProfileOptimizerUI() {
   const { user } = useUser();
@@ -146,26 +148,33 @@ export function ProfileOptimizerUI() {
     }
 
     setSaving(true);
-    try {
-      const updatedData = {
-        ...formData,
-        uid: user.uid,
-        email: user.email,
-        age: parseInt(formData.age) || 0,
-        bio: bioToSave || formData.rawBio,
-        updatedAt: serverTimestamp(),
-      };
-      
-      await setDoc(doc(db, "users", user.uid), updatedData, { merge: true });
-      toast({ title: "Profile Saved", description: "Your spiritual identity has been updated and is now visible to others." });
-      if (bioToSave) {
-        setFormData(prev => ({ ...prev, rawBio: bioToSave }));
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Save failed", description: error.message });
-    } finally {
-      setSaving(false);
-    }
+    const updatedData = {
+      ...formData,
+      uid: user.uid,
+      email: user.email,
+      age: parseInt(formData.age) || 0,
+      bio: bioToSave || formData.rawBio,
+      updatedAt: serverTimestamp(),
+    };
+
+    setDoc(doc(db, "users", user.uid), updatedData, { merge: true })
+      .then(() => {
+        toast({ title: "Profile Saved", description: "Your spiritual identity has been updated and is now visible to others." });
+        if (bioToSave) {
+          setFormData(prev => ({ ...prev, rawBio: bioToSave }));
+        }
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: `users/${user.uid}`,
+          operation: 'update',
+          requestResourceData: updatedData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
