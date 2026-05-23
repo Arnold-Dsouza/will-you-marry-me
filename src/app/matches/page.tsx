@@ -55,8 +55,14 @@ import { cn } from "@/lib/utils";
 const getValidImageUrl = (url: string | undefined, uid: string) => {
   const fallback = `https://picsum.photos/seed/${uid}/600/800`;
   if (!url) return fallback;
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-    return url;
+  try {
+    const parsed = new URL(url);
+    if (['http:', 'https:', 'data:'].includes(parsed.protocol)) {
+      return url;
+    }
+  } catch (e) {
+    // If it's a data URI or valid path it might not parse as a full URL, but standard data: URIs usually fail URL constructor
+    if (url.startsWith('data:image')) return url;
   }
   return fallback;
 };

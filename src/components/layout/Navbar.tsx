@@ -170,7 +170,7 @@ export function Navbar() {
           ) : (
             <div className="flex items-center gap-1 sm:gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="rounded-full px-3 sm:px-6 font-bold flex">
+                <Button variant="ghost" size="sm" className="rounded-full px-3 sm:px-6 font-bold">
                   Login
                 </Button>
               </Link>
