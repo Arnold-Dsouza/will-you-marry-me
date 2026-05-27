@@ -1,9 +1,10 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Check, Star, Shield, MessageCircle, Heart } from "lucide-react";
+import { Check, Star, Shield, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, useUser } from "@/firebase";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
@@ -31,9 +32,8 @@ const plans = [
     features: [
       "Unlimited matches",
       "AI Soulmate Tool usage",
-      "Send messages",
-      "Priority customer support",
       "See who viewed your profile",
+      "Priority customer support",
     ],
     buttonText: "Go Gold",
     variant: "default",
@@ -102,6 +102,7 @@ export default function PricingPage() {
               )}
               <CardHeader className="p-8 pb-4">
                 <CardTitle className="text-2xl font-headline font-bold">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-headline font-bold">{plan.name}</CardTitle>
                 <CardDescription className="text-sm">{plan.description}</CardDescription>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className="text-5xl font-black text-primary">${plan.price}</span>
@@ -135,13 +136,12 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Benefits Section */}
         <div className="mt-32 grid grid-cols-1 md:grid-cols-4 gap-8">
           {[
             { icon: Shield, title: "Verified Profiles", desc: "Every profile is manually screened" },
-            { icon: MessageCircle, title: "Secure Chat", desc: "Built-in safe messaging system" },
-            { icon: Star, title: "AI Optimized", desc: "Advanced spiritual compatibility" },
             { icon: Heart, title: "Faith First", desc: "Values-based matching algorithms" },
+            { icon: Star, title: "AI Optimized", desc: "Advanced spiritual compatibility" },
+            { icon: Shield, title: "Safe Platform", desc: "Secure data handling and privacy" },
           ].map((benefit, bIdx) => (
             <div key={bIdx} className="text-center space-y-3">
               <div className="mx-auto w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center text-primary">

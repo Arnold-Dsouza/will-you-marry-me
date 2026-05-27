@@ -7,7 +7,7 @@ A modern, faith-first Christian matrimonial platform built with Next.js, Firebas
 - **Spiritual Identity**: Comprehensive profiles including denomination, church involvement, and values.
 - **AI Profile Optimizer**: GenAI-powered bio enhancement to help you express your faith authentically.
 - **Soulmate AI**: Advanced matchmaking using LLMs to find partners based on spiritual alignment.
-- **Real-time Chat**: Secure messaging for intentional connections.
+- **Intentional Matching**: Express interest and connect with verified members of the community.
 
 ## Deployment to GitHub
 

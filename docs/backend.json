@@ -42,19 +42,6 @@
       },
       "required": ["uid", "email"]
     },
-    "Message": {
-      "title": "Message",
-      "description": "A message sent between two users.",
-      "type": "object",
-      "properties": {
-        "senderId": { "type": "string" },
-        "senderName": { "type": "string" },
-        "receiverId": { "type": "string" },
-        "text": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
-      },
-      "required": ["senderId", "receiverId", "text", "timestamp"]
-    },
     "Interest": {
       "title": "Interest",
       "description": "An expression of interest from one user to another.",
@@ -75,10 +62,6 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Public and private profile data for users."
-    },
-    "/messages/{messageId}": {
-      "schema": "Message",
-      "description": "Direct messages between users."
     },
     "/interests/{interestId}": {
       "schema": "Interest",

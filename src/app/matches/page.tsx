@@ -28,18 +28,12 @@ import {
   Church, 
   Briefcase, 
   Loader2, 
-  MessageCircle, 
   ArrowRight, 
   Sparkles, 
   Heart, 
   GraduationCap, 
-  Info,
-  User as UserIcon,
   ShieldCheck,
   Globe,
-  LayoutGrid,
-  Rows,
-  Send,
   BookOpen,
   Handshake
 } from "lucide-react";
@@ -51,7 +45,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -76,7 +69,6 @@ function MatchesContent() {
   const db = useFirestore();
   const { toast } = useToast();
 
-  const [viewMode, setViewMode] = useState<"grid" | "tile">("grid");
   const [interestView, setInterestView] = useState<"received" | "sent">("received");
   const [filters, setFilters] = useState({
     gender: searchParams.get("gender") || "any",
@@ -241,7 +233,7 @@ function MatchesContent() {
                     <Button variant={interestView === "sent" ? "secondary" : "ghost"} onClick={() => setInterestView("sent")} className="rounded-xl">Sent</Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {(interestView === "received" ? peopleWhoLikedMe : peopleILiked).map((match: any) => <MatchCard key={match.uid} match={match} isInterest={interestView === "received"} isSentInterest={interestView === "sent"} onView={() => setSelectedMatch(match)} onMessage={() => router.push(`/messages?userId=${match.uid}`)} />)}
+                    {(interestView === "received" ? peopleWhoLikedMe : peopleILiked).map((match: any) => <MatchCard key={match.uid} match={match} isInterest={interestView === "received"} isSentInterest={interestView === "sent"} onView={() => setSelectedMatch(match)} />)}
                   </div>
                 </TabsContent>
               </div>
@@ -292,8 +284,7 @@ function MatchesContent() {
                   </section>
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 pt-6">
-                  <Button className="flex-grow h-14 rounded-2xl text-lg font-bold shadow-xl bg-primary" onClick={() => handleExpressInterest(selectedMatch)}><Heart className="w-5 h-5 mr-2" /> Express Interest</Button>
-                  <Button variant="outline" className="h-14 rounded-2xl px-8 border-primary text-primary font-bold" onClick={() => router.push(`/messages?userId=${selectedMatch.uid}`)}><MessageCircle className="w-5 h-5 mr-2" /> Send Message</Button>
+                  <Button className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl bg-primary" onClick={() => handleExpressInterest(selectedMatch)}><Heart className="w-5 h-5 mr-2" /> Express Interest</Button>
                 </div>
               </div>
             </div>
@@ -304,7 +295,7 @@ function MatchesContent() {
   );
 }
 
-function MatchCard({ match, onInterest, onMessage, onView, isInterest, isSentInterest }: any) {
+function MatchCard({ match, onInterest, onView, isInterest, isSentInterest }: any) {
   const safePhotoURL = getValidImageUrl(match.photoURL, match.uid);
   return (
     <Card className="border-none shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group bg-white rounded-[2rem]">
@@ -326,9 +317,14 @@ function MatchCard({ match, onInterest, onMessage, onView, isInterest, isSentInt
         </div>
         <p className="text-xs text-muted-foreground line-clamp-2 italic leading-relaxed">"{match.bio || "Searching for a Christ-centered partner..."}"</p>
         <div className="pt-2">
-          {isInterest ? <Button className="w-full rounded-xl bg-accent font-bold" onClick={onMessage}><MessageCircle className="w-4 h-4 mr-2" /> Message Back</Button>
-          : isSentInterest ? <Button variant="outline" className="w-full rounded-xl border-primary text-primary font-bold h-11" onClick={onMessage}><Send className="w-4 h-4 mr-2" /> Continue Chat</Button>
-          : <div className="flex gap-2"><Button variant="outline" className="flex-grow rounded-xl border-primary text-primary h-11" onClick={onView}>View</Button><Button className="flex-grow rounded-xl bg-primary h-11 shadow-md font-bold" onClick={onInterest}>Interest</Button></div>}
+          {isInterest || isSentInterest ? (
+            <Button variant="outline" className="w-full rounded-xl border-primary text-primary font-bold h-11" onClick={onView}>View Details</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-grow rounded-xl border-primary text-primary h-11" onClick={onView}>View</Button>
+              <Button className="flex-grow rounded-xl bg-primary h-11 shadow-md font-bold" onClick={onInterest}>Interest</Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

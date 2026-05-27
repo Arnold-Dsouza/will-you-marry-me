@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, MessageCircle, Sparkles, Star, ScrollText, LogOut, Menu } from "lucide-react";
+import { Heart, User, Search, Sparkles, Star, ScrollText, LogOut, Menu } from "lucide-react";
 import { useAuth, useUser, useFirestore, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,6 @@ const navItems = [
   { name: "Soulmate AI", href: "/soulmate", icon: Sparkles },
   { name: "Success Stories", href: "/success-stories", icon: ScrollText },
   { name: "Pricing", href: "/pricing", icon: Star },
-  { name: "Messages", href: "/messages", icon: MessageCircle },
 ];
 
 export function Navbar() {
@@ -30,7 +29,6 @@ export function Navbar() {
   const { toast } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Fetch the user's custom profile from Firestore for the photo
   const userDocRef = useMemo(() => {
     if (!user || !db) return null;
     return doc(db, "users", user.uid);
@@ -38,7 +36,6 @@ export function Navbar() {
 
   const { data: profile } = useDoc(userDocRef);
 
-  // Sync user profile to Firestore on login if it doesn't exist
   useEffect(() => {
     async function syncProfile() {
       if (user && db) {
@@ -52,7 +49,7 @@ export function Navbar() {
             email: user.email,
             photoURL: user.photoURL,
             updatedAt: serverTimestamp(),
-            gender: "any",
+            gender: "Female",
             denomination: "any",
             bio: "Excited to join this intentional community!"
           }, { merge: true });
