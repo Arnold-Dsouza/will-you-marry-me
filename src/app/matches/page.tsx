@@ -17,13 +17,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { 
   MapPin, 
   Church, 
   Briefcase, 
@@ -66,6 +59,8 @@ const getValidImageUrl = (url: string | undefined, uid: string) => {
   return fallback;
 };
 
+const getMatchPrimaryPhoto = (match: any) => match.galleryPhotos?.[0] || match.photoURL;
+
 function MatchesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,8 +74,6 @@ function MatchesContent() {
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
   });
-
-  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
 
   const usersQuery = useMemo(() => {
     if (!db) return null;
@@ -158,7 +151,6 @@ function MatchesContent() {
       errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'interests', operation: 'create', requestResourceData: interestData }));
     });
     toast({ title: "Interest Expressed!", description: `We've notified ${match.displayName}.` });
-    setSelectedMatch(null);
   };
 
   return (
@@ -288,7 +280,7 @@ function MatchesContent() {
                         key={match.uid} 
                         match={match} 
                         onInterest={() => handleExpressInterest(match)} 
-                        onView={() => setSelectedMatch(match)} 
+                        onView={() => router.push(`/matches/${match.uid}`)} 
                         viewMode={viewMode}
                       />
                     ))}
@@ -335,7 +327,7 @@ function MatchesContent() {
                       match={match} 
                       isInterest={interestView === "received"} 
                       isSentInterest={interestView === "sent"} 
-                      onView={() => setSelectedMatch(match)} 
+                      onView={() => router.push(`/matches/${match.uid}`)} 
                       viewMode={viewMode}
                     />
                   ))}
@@ -352,94 +344,12 @@ function MatchesContent() {
         </div>
       </main>
 
-      <Dialog open={!!selectedMatch} onOpenChange={() => setSelectedMatch(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 rounded-[2rem] border-none shadow-2xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{selectedMatch?.displayName || "Member"}'s Profile</DialogTitle>
-            <DialogDescription>Full spiritual identity details.</DialogDescription>
-          </DialogHeader>
-          {selectedMatch && (
-            <div className="flex flex-col">
-              <div className="relative h-72 md:h-96">
-                <Image src={getValidImageUrl(selectedMatch.photoURL, selectedMatch.uid)} alt="" fill className="object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-8 text-white">
-                  <div>
-                    <h2 className="text-4xl font-headline font-bold">{selectedMatch.displayName}, {selectedMatch.age}</h2>
-                    <p className="flex items-center gap-2 opacity-80 mt-1 font-medium"><MapPin className="w-4 h-4 text-accent" /> {selectedMatch.location || "Global"}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8 space-y-10">
-                <section className="space-y-4">
-                  <h3 className="text-xl font-headline font-bold text-primary flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-accent" /> Spiritual Vision
-                  </h3>
-                  <p className="text-foreground italic text-lg leading-relaxed font-body">"{selectedMatch.bio || "Seeking a partner who shares a passion for the Lord."}"</p>
-                </section>
-                
-                <Separator />
-
-                <div className="grid md:grid-cols-2 gap-12">
-                  <div className="space-y-8">
-                    <section className="space-y-4">
-                      <h3 className="font-headline font-bold text-primary flex items-center gap-2"><Church className="w-5 h-5" /> Faith Journey</h3>
-                      <div className="bg-muted/30 p-6 rounded-2xl space-y-4 border">
-                        <div className="space-y-1">
-                          <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Favorite Bible Verse</Label>
-                          <p className="font-bold flex items-center gap-2 text-primary"><BookOpen className="w-4 h-4 text-accent shrink-0" /> {selectedMatch.favoriteVerse || "Awaiting detail..."}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Ministry Involvement</Label>
-                          <p className="text-sm flex items-center gap-2 leading-relaxed"><Handshake className="w-4 h-4 text-accent shrink-0" /> {selectedMatch.ministryInvolvement || "Active in local community"}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Denomination</Label>
-                          <Badge variant="secondary" className="rounded-lg">{selectedMatch.denomination || "Christian"}</Badge>
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-
-                  <div className="space-y-8">
-                    <section className="space-y-4">
-                      <h3 className="font-headline font-bold text-primary flex items-center gap-2"><Briefcase className="w-5 h-5" /> Life & Professional</h3>
-                      <div className="grid gap-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary shrink-0"><GraduationCap className="w-5 h-5" /></div>
-                          <div><p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Education</p><p className="text-sm font-bold">{selectedMatch.education || "Not specified"}</p></div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary shrink-0"><Briefcase className="w-5 h-5" /></div>
-                          <div><p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Profession</p><p className="text-sm font-bold">{selectedMatch.occupation || "Professional"}</p></div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center text-primary shrink-0"><Globe className="w-5 h-5" /></div>
-                          <div><p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Marital Status</p><p className="text-sm font-bold">{selectedMatch.maritalStatus || "Single"}</p></div>
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-4 pt-10 border-t">
-                  <Button className="flex-1 h-14 rounded-2xl text-lg font-bold shadow-xl bg-primary" onClick={() => handleExpressInterest(selectedMatch)}>
-                    <Heart className="w-6 h-6 mr-2 fill-current" /> Express Interest
-                  </Button>
-                  <Button variant="outline" className="flex-1 h-14 rounded-2xl text-lg font-bold" onClick={() => setSelectedMatch(null)}>
-                    Close Profile
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
 
 function MatchCard({ match, onInterest, onView, isInterest, isSentInterest, viewMode }: any) {
-  const safePhotoURL = getValidImageUrl(match.photoURL, match.uid);
+  const safePhotoURL = getValidImageUrl(getMatchPrimaryPhoto(match), match.uid);
   
   if (viewMode === "list") {
     return (

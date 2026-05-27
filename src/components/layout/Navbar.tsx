@@ -13,12 +13,19 @@ import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { name: "Matches", href: "/matches", icon: Search },
   { name: "Soulmate AI", href: "/soulmate", icon: Sparkles },
   { name: "Success Stories", href: "/success-stories", icon: ScrollText },
-  { name: "Pricing", href: "/pricing", icon: Star },
 ];
 
 export function Navbar() {
@@ -69,7 +76,7 @@ export function Navbar() {
     }
   };
 
-  const displayPhoto = profile?.photoURL || user?.photoURL;
+  const displayPhoto = profile?.galleryPhotos?.[0] || profile?.photoURL || user?.photoURL;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
@@ -142,15 +149,15 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           {user ? (
-            <div className="flex items-center gap-2">
-              <Link href="/profile">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold hover:bg-primary/5 p-1 pr-4">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20 relative">
                     {displayPhoto ? (
-                      <Image 
-                        src={displayPhoto} 
-                        alt="Profile" 
-                        fill 
+                      <Image
+                        src={displayPhoto}
+                        alt="Profile"
+                        fill
                         className="object-cover"
                       />
                     ) : (
@@ -159,11 +166,24 @@ export function Navbar() {
                   </div>
                   <span className="hidden md:inline">{user.displayName?.split(' ')[0] || "Profile"}</span>
                 </Button>
-              </Link>
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={handleLogout}>
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-xl">
+                <DropdownMenuLabel className="px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">Account</DropdownMenuLabel>
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 font-medium">
+                  <Link href="/profile">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 font-medium">
+                  <Link href="/profile/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl px-3 py-2 font-medium">
+                  <Link href="/about">About</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="rounded-xl px-3 py-2 font-medium text-destructive focus:text-destructive" onClick={handleLogout}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="flex items-center gap-1 sm:gap-2">
               <Link href="/login">

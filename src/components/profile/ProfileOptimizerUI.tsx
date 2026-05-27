@@ -25,6 +25,15 @@ import Image from "next/image";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
+const MAX_PROFILE_IMAGES = 10;
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onloadend = () => resolve(reader.result as string);
+  reader.onerror = () => reject(new Error("Failed to read image file"));
+  reader.readAsDataURL(file);
+});
+
 export function ProfileOptimizerUI() {
   const { user } = useUser();
   const db = useFirestore();
@@ -40,6 +49,7 @@ export function ProfileOptimizerUI() {
   const [formData, setFormData] = useState({
     displayName: "",
     photoURL: "",
+    galleryPhotos: [] as string[],
     age: "",
     gender: "Female",
     profileCreatedBy: "Self",
@@ -71,9 +81,14 @@ export function ProfileOptimizerUI() {
 
   useEffect(() => {
     if (profile) {
+      const galleryPhotos = profile.galleryPhotos || profile.images || [];
+      const fallbackPrimary = profile.photoURL || user?.photoURL || "";
+      const normalizedGallery = galleryPhotos.length > 0 ? galleryPhotos.slice(0, MAX_PROFILE_IMAGES) : (fallbackPrimary ? [fallbackPrimary] : []);
+
       setFormData({
         displayName: profile.displayName || user?.displayName || "",
-        photoURL: profile.photoURL || user?.photoURL || "",
+        photoURL: normalizedGallery[0] || "",
+        galleryPhotos: normalizedGallery,
         age: profile.age?.toString() || "",
         gender: profile.gender || "Female",
         profileCreatedBy: profile.profileCreatedBy || "Self",
@@ -106,9 +121,10 @@ export function ProfileOptimizerUI() {
   }, [profile, user]);
 
   const completion = useMemo(() => {
-    const criticalFields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'photoURL', 'faithDetails', 'favoriteVerse'];
+    const criticalFields = ['displayName', 'age', 'gender', 'location', 'denomination', 'rawBio', 'faithDetails', 'favoriteVerse'];
     const filled = criticalFields.filter(f => formData[f as keyof typeof formData] && formData[f as keyof typeof formData] !== "" && formData[f as keyof typeof formData] !== "any");
-    return Math.round((filled.length / criticalFields.length) * 100);
+    const photoBonus = formData.galleryPhotos.length > 0 ? 1 : 0;
+    return Math.round(((filled.length + photoBonus) / (criticalFields.length + 1)) * 100);
   }, [formData]);
 
   const handleOptimize = async () => {
@@ -154,6 +170,8 @@ export function ProfileOptimizerUI() {
     setSaving(true);
     const updatedData = {
       ...formData,
+      photoURL: formData.galleryPhotos[0] || formData.photoURL || "",
+      galleryPhotos: formData.galleryPhotos.slice(0, MAX_PROFILE_IMAGES),
       uid: user.uid,
       email: user.email,
       age: parseInt(formData.age) || 0,
@@ -181,25 +199,71 @@ export function ProfileOptimizerUI() {
       });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          variant: "destructive",
-          title: "File too large",
-          description: "Please select an image smaller than 2MB."
-        });
-        return;
-      }
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
-        toast({ title: "Photo Ready", description: "Save profile to keep the photo." });
-      };
-      reader.readAsDataURL(file);
+    const oversized = files.find(file => file.size > 2 * 1024 * 1024);
+    if (oversized) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please select images smaller than 2MB each."
+      });
+      e.target.value = "";
+      return;
     }
+
+    const remainingSlots = MAX_PROFILE_IMAGES - formData.galleryPhotos.length;
+    if (remainingSlots <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Photo limit reached",
+        description: "You can upload up to 10 photos. Remove one to add another."
+      });
+      e.target.value = "";
+      return;
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    const newPhotos = await Promise.all(selectedFiles.map(readFileAsDataUrl));
+
+    setFormData(prev => {
+      const nextGallery = [...prev.galleryPhotos, ...newPhotos].slice(0, MAX_PROFILE_IMAGES);
+      return {
+        ...prev,
+        galleryPhotos: nextGallery,
+        photoURL: nextGallery[0] || prev.photoURL,
+      };
+    });
+
+    toast({ title: "Photos added", description: "Save profile to keep the gallery." });
+    e.target.value = "";
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setFormData(prev => {
+      const nextGallery = prev.galleryPhotos.filter((_, currentIndex) => currentIndex !== index);
+      return {
+        ...prev,
+        galleryPhotos: nextGallery,
+        photoURL: nextGallery[0] || "",
+      };
+    });
+  };
+
+  const handleSetPrimaryPhoto = (index: number) => {
+    setFormData(prev => {
+      const nextGallery = [...prev.galleryPhotos];
+      const [selectedPhoto] = nextGallery.splice(index, 1);
+      if (!selectedPhoto) return prev;
+      nextGallery.unshift(selectedPhoto);
+      return {
+        ...prev,
+        galleryPhotos: nextGallery,
+        photoURL: selectedPhoto,
+      };
+    });
   };
 
   return (
@@ -236,8 +300,8 @@ export function ProfileOptimizerUI() {
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
                 <div className="relative group w-32 h-32">
                   <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-white shadow-lg relative">
-                    {formData.photoURL ? (
-                      <Image src={formData.photoURL} alt="Profile" fill className="object-cover" />
+                    {formData.galleryPhotos[0] ? (
+                      <Image src={formData.galleryPhotos[0]} alt="Primary profile" fill className="object-cover" />
                     ) : (
                       <User className="w-12 h-12 text-muted-foreground" />
                     )}
@@ -248,13 +312,13 @@ export function ProfileOptimizerUI() {
                       <Camera className="w-6 h-6" />
                     </button>
                   </div>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleFileChange} />
                 </div>
                 <div className="flex-grow space-y-2 text-center md:text-left">
                   <CardTitle className="text-3xl font-headline font-bold">Soulmate Identity</CardTitle>
                   <CardDescription>Present your authentic self to the community.</CardDescription>
                   <Button variant="outline" size="sm" className="rounded-full gap-2 mt-2" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="w-4 h-4" /> Change Portrait
+                    <Upload className="w-4 h-4" /> Add Photos
                   </Button>
                 </div>
               </div>
@@ -342,6 +406,54 @@ export function ProfileOptimizerUI() {
             <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2"><Label>Education</Label><Input value={formData.education} onChange={(e) => setFormData(p => ({ ...p, education: e.target.value }))} className="rounded-xl h-12" /></div>
               <div className="space-y-2"><Label>Occupation</Label><Input value={formData.occupation} onChange={(e) => setFormData(p => ({ ...p, occupation: e.target.value }))} className="rounded-xl h-12" /></div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-xl bg-white rounded-[2.5rem]">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <CardTitle className="text-2xl font-headline font-bold">Photo Gallery</CardTitle>
+                  <CardDescription>Upload up to 10 photos. Use the first slot for your best face-forward image.</CardDescription>
+                </div>
+                <Badge className="rounded-full px-4 py-1.5 bg-primary text-white font-bold">{formData.galleryPhotos.length}/10</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8 space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {formData.galleryPhotos.map((photo, index) => (
+                  <div key={`${photo}-${index}`} className="relative aspect-[4/5] rounded-2xl overflow-hidden border bg-muted group cursor-pointer" onClick={() => handleSetPrimaryPhoto(index)}>
+                    <Image src={photo} alt={`Profile photo ${index + 1}`} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                    <div className="absolute left-2 top-2 flex gap-2">
+                      {index === 0 && <Badge className="bg-white text-primary rounded-full font-bold">Primary</Badge>}
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 p-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button type="button" size="sm" variant="secondary" className="h-8 rounded-full text-[10px] font-bold flex-1" onClick={(event) => { event.stopPropagation(); handleSetPrimaryPhoto(index); }}>
+                        Set Main
+                      </Button>
+                      <Button type="button" size="sm" variant="destructive" className="h-8 rounded-full text-[10px] font-bold" onClick={(event) => { event.stopPropagation(); handleRemovePhoto(index); }}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {Array.from({ length: Math.max(0, MAX_PROFILE_IMAGES - formData.galleryPhotos.length) }).map((_, index) => (
+                  <button
+                    key={`empty-${index}`}
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-[4/5] rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    <Camera className="w-6 h-6" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Add Photo</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Normal matchmaking profiles usually start with a clear portrait, then mix in full-body, social, faith, travel, and lifestyle shots. This helps people trust the profile and get a fuller picture of the person.
+              </p>
             </CardContent>
           </Card>
         </div>

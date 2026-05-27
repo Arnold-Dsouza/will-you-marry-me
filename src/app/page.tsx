@@ -330,7 +330,6 @@ export default function Home() {
             <ul className="space-y-2 opacity-70">
               <li><Link href="/matches">Search Matches</Link></li>
               <li><Link href="/soulmate">AI Soulmate Tool</Link></li>
-              <li><Link href="/pricing">Membership Plans</Link></li>
               <li><Link href="/success-stories">Success Stories</Link></li>
             </ul>
           </div>
