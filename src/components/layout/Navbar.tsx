@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Search, Sparkles, Star, ScrollText, LogOut, Menu } from "lucide-react";
+import { Heart, User, Search, Sparkles, Star, ScrollText, LogOut, Menu, Home, LayoutGrid } from "lucide-react";
 import { useAuth, useUser, useFirestore, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
+  { name: "Home", href: "/", icon: Home },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { name: "Matches", href: "/matches", icon: Search },
   { name: "Soulmate AI", href: "/soulmate", icon: Sparkles },
   { name: "Success Stories", href: "/success-stories", icon: ScrollText },
@@ -80,7 +82,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto px-3 h-14 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -127,8 +129,8 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="hidden xl:flex items-center gap-6">
-          {navItems.map((item) => {
+        <div className="hidden lg:flex items-center gap-4">
+            {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
@@ -136,11 +138,11 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-1.5 text-sm font-bold transition-colors hover:text-primary",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "flex items-center gap-1 text-sm font-semibold transition-colors px-3 py-2 rounded-md",
+                  isActive ? "bg-primary/5 text-primary" : "text-muted-foreground hover:text-primary"
                 )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-5 h-5" />
                 {item.name}
               </Link>
             );
@@ -151,8 +153,8 @@ export function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-bold hover:bg-primary/5 p-1 pr-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20 relative">
+                <Button variant="ghost" size="sm" className="rounded-full gap-2 font-semibold hover:bg-primary/5 p-1 pr-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20 relative">
                     {displayPhoto ? (
                       <Image
                         src={displayPhoto}

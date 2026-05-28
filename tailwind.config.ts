@@ -14,6 +14,28 @@ export default {
         headline: ['Inter', 'sans-serif'],
         code: ['monospace'],
       },
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '1.5rem',
+          lg: '2rem',
+        },
+      },
+      spacing: {
+        '4.5': '1.125rem',
+        '9': '2.25rem',
+        '14': '3.5rem',
+      },
+      fontSize: {
+        xs: ['0.75rem', {lineHeight: '1rem'}],
+        sm: ['0.875rem', {lineHeight: '1.25rem'}],
+        base: ['1rem', {lineHeight: '1.5rem'}],
+        lg: ['1.125rem', {lineHeight: '1.75rem'}],
+        xl: ['1.25rem', {lineHeight: '1.75rem'}],
+        '2xl': ['1.5rem', {lineHeight: '2rem'}],
+        '3xl': ['1.875rem', {lineHeight: '2.25rem'}],
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -70,6 +92,11 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        subtle: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)',
+        focus: '0 0 0 4px rgba(59,130,246,0.08)',
+        card: '0 8px 24px rgba(16,24,40,0.08)',
       },
       keyframes: {
         'accordion-down': {

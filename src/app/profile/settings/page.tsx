@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useUser } from "@/firebase/auth/use-user";
+import { useFirestore, useUser } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 
 type Settings = {
@@ -25,6 +24,7 @@ type Settings = {
 
 export default function ProfileSettingsPage() {
   const { user, profile } = useUser();
+  const db = useFirestore();
   const uid = user?.uid;
   const { toast } = useToast();
 
@@ -46,6 +46,7 @@ export default function ProfileSettingsPage() {
 
   async function handleSave() {
     if (!uid) return toast({ title: "Not signed in", description: "Sign in before saving settings." });
+    if (!db) return toast({ title: "Firebase unavailable", description: "Try again after Firebase finishes loading." });
     setSaving(true);
     try {
       await setDoc(doc(db, "users", uid), { settings }, { merge: true });

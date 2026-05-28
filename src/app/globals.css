@@ -5,29 +5,42 @@
 
 @layer base {
   :root {
-    --background: 255 13% 98%;
-    --foreground: 250 40% 10%;
+    /* Base surface & type */
+    --background: 210 40% 98%; /* very light neutral */
+    --foreground: 220 12% 8%; /* deep slate for text */
     --card: 0 0% 100%;
-    --card-foreground: 250 40% 10%;
+    --card-foreground: 220 12% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 250 40% 10%;
-    --primary: 250 40% 39%;
+    --popover-foreground: 220 12% 8%;
+
+    /* Primary / brand */
+    --primary: 230 18% 14%; /* deep navy/slate */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 50% 96%;
-    --secondary-foreground: 220 50% 48%;
-    --muted: 220 10% 94%;
-    --muted-foreground: 250 20% 45%;
-    --accent: 220 50% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+
+    /* Accent for highlights */
+    --accent: 40 95% 60%; /* warm amber */
+    --accent-foreground: 220 14% 12%;
+
+    --secondary: 220 12% 96%;
+    --secondary-foreground: 220 12% 44%;
+
+    /* Muted / background panels */
+    --muted: 220 7% 96%;
+    --muted-foreground: 220 14% 45%;
+
+    /* Destructive / negative */
+    --destructive: 0 72% 54%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 250 40% 39%;
+
+    --border: 220 12% 92%;
+    --input: 220 12% 96%;
+    --ring: 230 18% 30%;
     --radius: 1rem;
-    --chart-1: 250 40% 39%;
-    --chart-2: 220 50% 48%;
-    --chart-3: 255 13% 98%;
+
+    /* Chart palette */
+    --chart-1: 230 18% 14%;
+    --chart-2: 40 95% 60%;
+    --chart-3: 210 60% 98%;
     --chart-4: 250 20% 45%;
     --chart-5: 0 0% 100%;
   }
