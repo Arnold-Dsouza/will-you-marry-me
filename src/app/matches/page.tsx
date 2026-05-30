@@ -897,9 +897,13 @@ function MatchCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
         <div className="absolute right-4 top-4">
-          <Badge className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-sm">
-            Verified
-          </Badge>
+          <Image
+            src="/logo/verified.png"
+            alt="Verified"
+            width={36}
+            height={36}
+            className="rounded-full bg-white/90 p-0.5 shadow-sm"
+          />
         </div>
 
         {match.favoriteVerse && (
