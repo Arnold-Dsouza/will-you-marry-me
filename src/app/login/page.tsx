@@ -25,6 +25,7 @@ function LoginContent() {
   const auth = useAuth();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
+  const [mounted, setMounted] = useState(false);
   
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,10 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [justSignedUp, setJustSignedUp] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -129,6 +134,28 @@ function LoginContent() {
       setLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-none">
+        <div className="hidden md:block bg-primary/10" />
+        <div className="p-8 md:p-16 flex flex-col justify-center bg-background/50 min-h-[520px]">
+          <div className="max-w-sm mx-auto w-full space-y-8">
+            <div className="space-y-2">
+              <div className="h-9 w-48 rounded bg-slate-200" />
+              <div className="h-5 w-64 rounded bg-slate-100" />
+            </div>
+            <div className="space-y-4">
+              <div className="h-11 rounded-xl bg-slate-100" />
+              <div className="h-11 rounded-xl bg-slate-100" />
+              <div className="h-11 rounded-xl bg-slate-100" />
+              <div className="h-11 rounded-xl bg-slate-200" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!auth) {
     return (
@@ -245,10 +272,7 @@ function LoginContent() {
             onClick={handleGoogleLogin}
             disabled={loading}
           >
-            <Image 
-              src="https://images.unsplash.com/gh/nextauthjs/next-auth/main/packages/next-auth/provider-logos/google.svg" 
-              alt="Google" width={18} height={18} className="mr-2" 
-            />
+            <Image src="/logo/google.svg" alt="Google" width={18} height={18} className="mr-2" />
             Continue with Google
           </Button>
 
