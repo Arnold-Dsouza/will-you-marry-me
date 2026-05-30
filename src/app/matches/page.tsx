@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -101,7 +101,7 @@ function EyeIcon() {
 function MatchesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser();
+  const { user, loading: authLoading } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
 
@@ -119,6 +119,13 @@ function MatchesContent() {
     gender: searchParams.get("gender") || "any",
     denomination: searchParams.get("denomination") || "any",
   });
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login?redirect=/matches");
+    }
+  }, [authLoading, router, user]);
+  const isAuthLocked = authLoading || !user;
 
   const usersQuery = useMemo(() => (db ? collection(db, "users") : null), [db]);
   const currentUserRef = useMemo(() => (db && user ? doc(db, "users", user.uid) : null), [db, user]);
@@ -310,6 +317,14 @@ function MatchesContent() {
     setSortBy("recommended");
     setPage(1);
   };
+
+  if (isAuthLocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#fff7f2_0%,#f8fafc_28%,#eef2f7_100%)]">
+        <Loader2 className="h-10 w-10 animate-spin text-slate-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff7f2_0%,#f8fafc_28%,#eef2f7_100%)] text-slate-900">
@@ -876,7 +891,7 @@ function MatchCard({
   }
 
   return (
-    <Card className="group overflow-hidden border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:shadow-2xl">
+    <Card className="group overflow-hidden border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:shadow-2xl flex flex-col h-full">
       <div className="relative aspect-[4/5] cursor-pointer overflow-hidden" onClick={onView}>
         <Image src={primaryPhoto} alt={match.displayName || "Match profile"} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -905,7 +920,7 @@ function MatchCard({
           </div>
         </div>
       </div>
-      <CardContent className="space-y-3 p-3">
+      <CardContent className="flex-1 flex flex-col justify-between space-y-3 p-3">
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary" className="rounded-full px-2 py-1 text-xs">
             <Church className="mr-2 h-3.5 w-3.5" /> {match.denomination || "Christian"}

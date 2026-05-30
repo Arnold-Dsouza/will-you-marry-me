@@ -1,11 +1,32 @@
 
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { SoulmateToolUI } from "@/components/matching/SoulmateToolUI";
 import { Sparkles, Heart, Shield, Star, Church } from "lucide-react";
+import { useUser } from "@/firebase";
+import { Loader2 } from "lucide-react";
 
 export default function SoulmatePage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useUser();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login?redirect=/soulmate");
+    }
+  }, [authLoading, router, user]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

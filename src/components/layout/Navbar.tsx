@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Heart, User, Search, Sparkles, Star, ScrollText, LogOut, Menu, Home, LayoutGrid } from "lucide-react";
@@ -32,6 +32,7 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
   const auth = useAuth();
   const db = useFirestore();
@@ -73,6 +74,7 @@ export function Navbar() {
     try {
       await signOut(auth);
       toast({ title: "Logged out", description: "Come back soon!" });
+      router.push("/");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Logout failed", description: error.message });
     }
@@ -84,26 +86,27 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
       <div className="container mx-auto px-3 h-14 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="xl:hidden rounded-full">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-               <div className="p-6 border-b bg-primary/5">
+          {user && (
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="xl:hidden rounded-full">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0">
+                <div className="p-6 border-b bg-primary/5">
                   <div className="flex items-center gap-2">
                     <Heart className="w-5 h-5 text-primary fill-current" />
                     <span className="font-headline text-xl font-bold text-primary">Menu</span>
                   </div>
-               </div>
-               <div className="flex flex-col py-4">
-                 {navItems.map((item) => {
+                </div>
+                <div className="flex flex-col py-4">
+                  {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <Link 
-                        key={item.href} 
-                        href={item.href} 
+                      <Link
+                        key={item.href}
+                        href={item.href}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
                           "flex items-center gap-4 px-6 py-4 font-bold text-sm hover:bg-primary/5",
@@ -114,40 +117,45 @@ export function Navbar() {
                         {item.name}
                       </Link>
                     );
-                 })}
-               </div>
-            </SheetContent>
-          </Sheet>
+                  })}
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform shadow-lg">
-              <Heart className="w-6 h-6 fill-current" />
-            </div>
-            <span className="font-headline text-xl font-bold tracking-tight text-primary hidden sm:inline">
-              Will You Marry Me
-            </span>
+            <Image
+              src="/logo/logo2.png"
+              alt="Will You Marry Me"
+              width={180}
+              height={48}
+              className="h-19 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+              priority
+            />
           </Link>
         </div>
 
-        <div className="hidden lg:flex items-center gap-4">
+        {user && (
+          <div className="hidden lg:flex items-center gap-4">
             {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-1 text-sm font-semibold transition-colors px-3 py-2 rounded-md",
-                  isActive ? "bg-primary/5 text-primary" : "text-muted-foreground hover:text-primary"
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-1 text-sm font-semibold transition-colors px-3 py-2 rounded-md",
+                    isActive ? "bg-primary/5 text-primary" : "text-muted-foreground hover:text-primary"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {user ? (

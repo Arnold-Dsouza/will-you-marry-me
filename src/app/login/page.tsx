@@ -38,12 +38,14 @@ function LoginContent() {
     setIsSignUp(mode === "signup");
   }, [searchParams]);
 
+  const redirectTo = searchParams.get("redirect") || "/";
+
   useEffect(() => {
     // Only redirect if logged in and we didn't JUST sign up
     if (user && !authLoading && !justSignedUp) {
-      router.push("/");
+      router.push(redirectTo);
     }
-  }, [user, authLoading, router, justSignedUp]);
+  }, [user, authLoading, router, justSignedUp, redirectTo]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +90,7 @@ function LoginContent() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "Welcome back!", description: "Logged in successfully." });
-        router.push("/");
+        router.push(redirectTo);
       }
     } catch (error: any) {
       setJustSignedUp(false);
@@ -116,7 +118,7 @@ function LoginContent() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/");
+      router.push(redirectTo);
     } catch (error: any) {
       toast({ 
         variant: "destructive", 

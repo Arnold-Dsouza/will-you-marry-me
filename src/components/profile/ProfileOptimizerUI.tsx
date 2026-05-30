@@ -15,6 +15,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { optimizeProfile, AIProfileOptimizerOutput } from "@/ai/flows/ai-profile-optimizer";
 import { Sparkles, Loader2, Save, User, Church, Briefcase, GraduationCap, Ruler, Heart, Star, UserCircle, Globe, Wallet, MapPin, Camera, Upload, BookOpen, Handshake, Edit } from "lucide-react";
@@ -28,6 +30,183 @@ import { FirestorePermissionError } from "@/firebase/errors";
 
 const MAX_PROFILE_IMAGES = 10;
 
+// Full country list for selects (common list)
+import { COUNTRIES, DENOMINATIONS } from '@/lib/profileOptions';
+
+// States / provinces for some countries (extendable)
+const STATE_MAP: Record<string, string[]> = {
+  India: [
+    'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu & Kashmir','Ladakh'
+  ],
+  "United States": [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+  ],
+  USA: [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+  ],
+  Canada: [
+    'Alberta','British Columbia','Manitoba','New Brunswick','Newfoundland and Labrador','Nova Scotia','Ontario','Prince Edward Island','Quebec','Saskatchewan'
+  ],
+  Australia: [
+    'New South Wales','Queensland','South Australia','Tasmania','Victoria','Western Australia','Australian Capital Territory','Northern Territory'
+  ],
+  "United Kingdom": [
+    'England','Scotland','Wales','Northern Ireland'
+  ]
+  ,
+  "Saudi Arabia": [
+    'Riyadh','Makkah','Madinah','Al Qassim','Eastern Province','Asir','Tabuk','Hail','Northern Borders','Jizan','Najran','Al Bahah','Al Jawf'
+  ]
+};
+
+const MOTHER_TONGUES = [
+  'Assamese','Bengali','English','Gujarati','Hindi','Kannada','Konkani','Malayalam','Marathi','Marwari','Odiya','Punjabi','Sindhi','Tamil','Telugu','Urdu',
+  'Angika','Arunachali','Awadhi','Badaga','Bhojpuri','Bihari','Brij','Chatisgarhi','Dogri','French','Garhwali','Garo','Haryanvi','Himachali/Pahari','Kanauji','Kashmiri','Khandesi','Khasi','Koshali','Kumoani','Kutchi','Ladacki','Lepcha','Magahi','Maithili','Miji','Mizo','Monpa','Nepali','Nicobarese','Tripuri','Tulu'
+];
+
+const EDUCATION_GROUPS = [
+  {
+    label: 'Doctorates',
+    items: [
+      { id: '33', label: 'Ph.D.' },
+      { id: '116', label: 'DM' },
+      { id: '117', label: 'Postdoctoral fellow' },
+      { id: '118', label: 'Fellow of National Board (FNB)' },
+    ]
+  },
+  {
+    label: 'Service - IAS / IPS / IRS / IES / IFS',
+    items: [
+      { id: '77', label: 'IAS' },{ id: '78', label: 'IPS' },{ id: '79', label: 'IRS' },{ id: '80', label: 'IES' },{ id: '81', label: 'IFS' },{ id: '92', label: 'Other Degree in Service' }
+    ]
+  },
+  {
+    label: 'Any Financial Qualification - ICWAI / CA / CS/ CFA',
+    items: [
+      { id: '36', label: 'CA' },{ id: '37', label: 'ICWA' },{ id: '48', label: 'CS' },{ id: '75', label: 'CFA (Chartered Financial Analyst)' },{ id: '91', label: 'Other Degree in Finance' }
+    ]
+  },
+  {
+    label: 'Any Masters in Arts / Science / Commerce',
+    items: [
+      { id: '10', label: 'M.Phil.' },{ id: '11', label: 'MCom' },{ id: '12', label: 'M.Sc.' },{ id: '13', label: 'M.A.' },{ id: '38', label: 'M.Ed.' },{ id: '60', label: 'MLIS' },{ id: '63', label: 'MSW' },{ id: '86', label: 'Other Master Degree in Arts / Science / Commerce' },{ id: '98', label: 'MFA' },{ id: '120', label: 'M.Des' }
+    ]
+  },
+  {
+    label: 'Any Masters in Engineering / Computers',
+    items: [
+      { id: '3', label: 'M.S.(Engg.)' },{ id: '7', label: 'M.Arch.' },{ id: '51', label: 'MCA' },{ id: '52', label: 'PGDCA' },{ id: '53', label: 'ME' },{ id: '54', label: 'M.Tech.' },{ id: '55', label: 'M.Sc. IT / Computer Science' },{ id: '84', label: 'Other Masters Degree in Engineering / Computers' }
+    ]
+  },
+  {
+    label: 'Any Masters in Legal',
+    items: [ { id: '70', label: 'M.L.' },{ id: '71', label: 'LL.M.' },{ id: '89', label: 'Other Master Degree in  Legal' } ]
+  },
+  {
+    label: 'Any Masters in Management',
+    items: [ { id: '14', label: 'MHM  (Hotel Management)' },{ id: '61', label: 'MBA' },{ id: '62', label: 'PGDM' },{ id: '64', label: 'MHRM (Human Resource Management)' },{ id: '76', label: 'MFM (Financial Management)' },{ id: '96', label: 'Other Master Degree in Management' },{ id: '112', label: 'MHA / MHM (Hospital Administration)' } ]
+  },
+  {
+    label: 'Any Masters in Medicine - General / Dental / Surgeon',
+    items: [ { id: '20', label: 'MD / MS (Medical)' },{ id: '22', label: 'MDS' },{ id: '23', label: 'MVSc' },{ id: '113', label: 'MCh' },{ id: '114', label: 'DNB' } ]
+  },
+  {
+    label: 'Any Bachelors in Arts / Science / Commerce',
+    items: [ { id: '15', label: 'B.Phil.' },{ id: '16', label: 'B.Com.' },{ id: '17', label: 'B.Sc.' },{ id: '18', label: 'B.A.' },{ id: '39', label: 'B.Ed.' },{ id: '43', label: 'Aviation Degree' },{ id: '56', label: 'BFA' },{ id: '57', label: 'BLIS' },{ id: '58', label: 'B.S.W' },{ id: '59', label: 'B.M.M.' },{ id: '66', label: 'BFT' },{ id: '85', label: 'Other Bachelor Degree in Arts / Science / Commerce' },{ id: '119', label: 'B.Des' } ]
+  },
+  {
+    label: 'Any Bachelors in Engineering / Computers',
+    items: [ { id: '5', label: 'BCA' },{ id: '6', label: 'Aeronautical Engineering' },{ id: '8', label: 'B.Arch' },{ id: '9', label: 'B.Plan' },{ id: '49', label: 'BE' },{ id: '50', label: 'B.Tech.' },{ id: '83', label: 'Other Bachelor Degree in Engineering / Computers' },{ id: '95', label: 'B.Sc IT/ Computer Science' },{ id: '109', label: 'B.S.(Engineering)' } ]
+  },
+  {
+    label: 'Any Bachelors in Legal',
+    items: [ { id: '72', label: 'BGL' },{ id: '73', label: 'B.L.' },{ id: '74', label: 'LL.B.' },{ id: '90', label: 'Other Bachelor Degree in Legal' } ]
+  },
+  {
+    label: 'Any Bachelors in Management',
+    items: [ { id: '19', label: 'BHM (Hotel Management)' },{ id: '35', label: 'BBA' },{ id: '65', label: 'BFM (Financial Management)' },{ id: '87', label: 'Other Bachelor Degree in Management' },{ id: '110', label: 'BHA / BHM (Hospital Administration)' } ]
+  },
+  {
+    label: 'Any Bachelors in Medicine in General / Dental / Surgeon',
+    items: [ { id: '21', label: 'MBBS' },{ id: '25', label: 'BDS' },{ id: '26', label: 'BVSc' },{ id: '28', label: 'BHMS' },{ id: '29', label: 'B.A.M.S.' },{ id: '68', label: 'BSMS' },{ id: '69', label: 'BUMS' } ]
+  },
+  {
+    label: 'Any Diploma',
+    items: [ { id: '45', label: 'Trade School' },{ id: '46', label: 'Diploma' },{ id: '82', label: 'Polytechnic' },{ id: '94', label: 'Others in Diploma' } ]
+  },
+  {
+    label: 'Higher Secondary / Secondary',
+    items: [ { id: '47', label: 'Higher Secondary School / High School' } ]
+  },
+  {
+    label: 'Any Bachelors in Medicine Others',
+    items: [ { id: '27', label: 'BPT' },{ id: '31', label: 'BPharm' },{ id: '88', label: 'Other Bachelor Degree in Medicine' },{ id: '101', label: 'B.Sc. Nursing' } ]
+  },
+  {
+    label: 'Any Masters in Medicine Others',
+    items: [ { id: '24', label: 'MPT' },{ id: '30', label: 'M.Pharm' },{ id: '97', label: 'Other Master Degree in Medicine' } ]
+  }
+];
+
+const OCCUPATION_GROUPS = [
+  { label: 'ADMINISTRATION', items: [
+    { id: '49', label: 'Manager' },{ id: '48', label: 'Supervisor' },{ id: '47', label: 'Officer' },{ id: '39', label: 'Administrative Professional' },{ id: '50', label: 'Executive' },{ id: '46', label: 'Clerk' },{ id: '63', label: 'Human Resources Professional' },{ id: '78', label: 'Secretary / Front Office' }
+  ]},
+  { label: 'AGRICULTURE', items: [ { id: '37', label: 'Agriculture & Farming Professional' },{ id: '81', label: 'Horticulturist' } ] },
+  { label: 'AIRLINE', items: [ { id: '30', label: 'Pilot' },{ id: '28', label: 'Air Hostess / Flight Attendant' },{ id: '29', label: 'Airline Professional' } ] },
+  { label: 'ARCHITECTURE & DESIGN', items: [ { id: '19', label: 'Architect' },{ id: '20', label: 'Interior Designer' } ] },
+  { label: 'BANKING & FINANCE', items: [ { id: '7', label: 'Chartered Accountant' },{ id: '10', label: 'Company Secretary' },{ id: '8', label: 'Accounts / Finance Professional' },{ id: '16', label: 'Banking Service Professional' },{ id: '9', label: 'Auditor' },{ id: '69', label: 'Financial Accountant' },{ id: '64', label: 'Financial Analyst / Planning' },{ id: '87', label: 'Investment Professional' } ] },
+  { label: 'BEAUTY & FASHION', items: [ { id: '25', label: 'Fashion Designer' },{ id: '33', label: 'Beautician' },{ id: '82', label: 'Hair Stylist' },{ id: '83', label: 'Jewellery designer' },{ id: '84', label: 'Designer (others)' },{ id: '85', label: 'Makeup Artist' } ] },
+  { label: 'BPO & CUSTOMER SERVICE', items: [ { id: '86', label: 'BPO / KPO / ITes Professional' },{ id: '40', label: 'Customer Service Professional' } ] },
+  { label: 'CIVIL SERVICES', items: [ { id: '52', label: 'Civil Services (IAS / IES / IFS / IPS / IRS)' } ] },
+  { label: 'CORPORATE PROFESSIONALS', items: [ { id: '70', label: 'Analyst' },{ id: '45', label: 'Consultant' },{ id: '88', label: 'Corporate Communication' },{ id: '89', label: 'Corporate Planning' },{ id: '42', label: 'Marketing Professional' },{ id: '90', label: 'Operations Management' },{ id: '43', label: 'Sales Professional' },{ id: '91', label: 'Senior Manager / Manager' },{ id: '92', label: 'Subject Matter Expert' },{ id: '93', label: 'Business Development Professional' },{ id: '94', label: 'Content Writer' } ] },
+  { label: 'DEFENCE', items: [ { id: '53', label: 'Army' },{ id: '54', label: 'Navy' },{ id: '96', label: 'Defence Services (Others)' },{ id: '55', label: 'Air Force' },{ id: '97', label: 'Paramilitary' } ] },
+  { label: 'EDUCATION & TRAINING', items: [ { id: '5', label: 'Professor / Lecturer' },{ id: '4', label: 'Teaching / Academician' },{ id: '6', label: 'Education Professional' },{ id: '111', label: 'Training Professional' },{ id: '112', label: 'Research Assistant' },{ id: '113', label: 'Research Scholar' } ] },
+  { label: 'ENGINEERING', items: [ { id: '114', label: 'Civil Engineer' },{ id: '115', label: 'Electronics / Telecom Engineer' },{ id: '116', label: 'Mechanical / Production Engineer' },{ id: '117', label: 'Quality Assurance Engineer - Non IT' },{ id: '3', label: 'Engineer - Non IT' },{ id: '65', label: 'Designer' },{ id: '118', label: 'Product Manager - Non IT' },{ id: '77', label: 'Project Manager - Non IT' } ] },
+  { label: 'HOSPITALITY', items: [ { id: '34', label: 'Hotel / Hospitality Professional' },{ id: '129', label: 'Restaurant / Catering Professional' },{ id: '130', label: 'Chef / Cook' } ] },
+  { label: 'IT & SOFTWARE', items: [ { id: '1', label: 'Software Professional' },{ id: '2', label: 'Hardware Professional' },{ id: '74', label: 'Product Manager' },{ id: '76', label: 'Project Manager' },{ id: '75', label: 'Program Manager' },{ id: '119', label: 'Animator' },{ id: '120', label: 'Cyber / Network Security' },{ id: '121', label: 'UI / UX Designer' },{ id: '122', label: 'Web / Graphic Designer' },{ id: '123', label: 'Software Consultant' },{ id: '124', label: 'Data Analyst' },{ id: '125', label: 'Data Scientist' },{ id: '126', label: 'Network Engineer' },{ id: '128', label: 'Quality Assurance Engineer' } ] },
+  { label: 'LEGAL', items: [ { id: '17', label: 'Lawyer & Legal Professional' },{ id: '131', label: 'Legal Assistant' } ] },
+  { label: 'POLICE / LAW ENFORCEMENT', items: [ { id: '18', label: 'Law Enforcement Officer' },{ id: '95', label: 'Police' } ] },
+  { label: 'MEDICAL & HEALTHCARE OTHER', items: [ { id: '14', label: 'Healthcare Professional' },{ id: '15', label: 'Paramedical Professional' },{ id: '13', label: 'Nurse' },{ id: '98', label: 'Pharmacist' },{ id: '100', label: 'Physiotherapist' },{ id: '103', label: 'Psychologist' },{ id: '107', label: 'Therapist' },{ id: '108', label: 'Medical Transcriptionist' },{ id: '109', label: 'Dietician / Nutritionist' },{ id: '110', label: 'Lab Technician' },{ id: '150', label: 'Medical Representative' } ] },
+  { label: 'MEDIA & ENTERTAINMENT', items: [ { id: '27', label: 'Journalist' },{ id: '22', label: 'Media Professional' },{ id: '24', label: 'Entertainment Professional' },{ id: '26', label: 'Event Management Professional' },{ id: '21', label: 'Advertising / PR Professional' },{ id: '66', label: 'Designer' },{ id: '79', label: 'Actor / Model' },{ id: '80', label: 'Artist' } ] },
+  { label: 'MERCHANT NAVY', items: [ { id: '32', label: 'Mariner / Merchant Navy' },{ id: '133', label: 'Sailor' } ] },
+  { label: 'SCIENTIST', items: [ { id: '35', label: 'Scientist / Researcher' } ] },
+  { label: 'SENIOR MANAGEMENT', items: [ { id: '41', label: 'CXO / President, Director, Chairman' },{ id: '134', label: 'VP / AVP / GM / DGM / AGM' } ] },
+  { label: 'DOCTOR', items: [ { id: '12', label: 'Doctor' },{ id: '105', label: 'Dentist' },{ id: '106', label: 'Surgeon' },{ id: '104', label: 'Veterinary Doctor' } ] },
+  { label: 'OTHERS', items: [ { id: '44', label: 'Technician' },{ id: '38', label: 'Arts & Craftsman' },{ id: '67', label: 'Student' },{ id: '68', label: 'Librarian' },{ id: '71', label: 'Business Owner / Entrepreneur' },{ id: '72', label: 'Retired' },{ id: '73', label: 'Transportation / Logistics Professional' },{ id: '135', label: 'Agent / Broker / Trader' },{ id: '136', label: 'Contractor' },{ id: '137', label: 'Fitness Professional' },{ id: '138', label: 'Security Professional' },{ id: '36', label: 'Social Worker / Volunteer / NGO' },{ id: '51', label: 'Sportsperson' },{ id: '139', label: 'Travel Professional' },{ id: '140', label: 'Singer' },{ id: '141', label: 'Writer' },{ id: '158', label: 'Politician' },{ id: '142', label: 'Associate' },{ id: '143', label: 'Builder' },{ id: '144', label: 'Chemist' },{ id: '145', label: 'CNC Operator' },{ id: '146', label: 'Distributor' },{ id: '147', label: 'Driver' },{ id: '148', label: 'Freelancer' },{ id: '149', label: 'Mechanic' },{ id: '151', label: 'Musician' },{ id: '152', label: 'Photo / Videographer' },{ id: '153', label: 'Surveyor' },{ id: '154', label: 'Tailor' },{ id: '102', label: 'Not working' },{ id: '9997', label: 'Others' } ] }
+];
+
+const RELIGIOUS_VALUES = [
+  { id: '0', label: '- Select -' },
+  { id: '7', label: 'Very religious' },
+  { id: '8', label: 'Believe in Jesus not in religion' },
+  { id: '9', label: 'Sunday Church Goer' },
+  { id: '10', label: 'Average Christian' },
+  { id: '11', label: 'Not religious' },
+  { id: '99', label: 'Not given it a thought' }
+];
+
+const HEIGHT_OPTIONS = [
+  { id: '0', label: '--- Feet/Inches ---' },
+  { id: '121.92', label: '4 feet' },{ id: '124.46', label: '4 feet 1 inches' },{ id: '127.00', label: '4 feet 2 inches' },{ id: '129.54', label: '4 feet 3 inches' },{ id: '132.08', label: '4 feet 4 inches' },{ id: '134.62', label: '4 feet 5 inches' },{ id: '137.16', label: '4 feet 6 inches' },{ id: '139.70', label: '4 feet 7 inches' },{ id: '142.24', label: '4 feet 8 inches' },{ id: '144.78', label: '4 feet 9 inches' },{ id: '147.32', label: '4 feet 10 inches' },{ id: '149.86', label: '4 feet 11 inches' },
+  { id: '152.40', label: '5 feet' },{ id: '154.94', label: '5 feet 1 inches' },{ id: '157.48', label: '5 feet 2 inches' },{ id: '160.02', label: '5 feet 3 inches' },{ id: '162.56', label: '5 feet 4 inches' },{ id: '165.10', label: '5 feet 5 inches' },{ id: '167.64', label: '5 feet 6 inches' },{ id: '170.18', label: '5 feet 7 inches' },{ id: '172.72', label: '5 feet 8 inches' },{ id: '175.26', label: '5 feet 9 inches' },{ id: '177.80', label: '5 feet 10 inches' },{ id: '180.34', label: '5 feet 11 inches' },
+  { id: '182.88', label: '6 feet' },{ id: '185.42', label: '6 feet 1 inches' },{ id: '187.96', label: '6 feet 2 inches' },{ id: '190.50', label: '6 feet 3 inches' },{ id: '193.04', label: '6 feet 4 inches' },{ id: '195.58', label: '6 feet 5 inches' },{ id: '198.12', label: '6 feet 6 inches' },{ id: '200.66', label: '6 feet 7 inches' },{ id: '203.20', label: '6 feet 8 inches' },{ id: '205.74', label: '6 feet 9 inches' },{ id: '208.28', label: '6 feet 10 inches' },{ id: '210.82', label: '6 feet 11 inches' },{ id: '213.36', label: '7 feet' },{ id: '215.90', label: '7 feet 1 inches' },{ id: '218.44', label: '7 feet 2 inches' },{ id: '220.98', label: '7 feet 3 inches' },{ id: '223.52', label: '7 feet 4 inches' },{ id: '226.06', label: '7 feet 5 inches' },{ id: '228.60', label: '7 feet 6 inches' },{ id: '231.14', label: '7 feet 7 inches' },{ id: '233.68', label: '7 feet 8 inches' },{ id: '236.22', label: '7 feet 9 inches' },{ id: '238.76', label: '7 feet 10 inches' },{ id: '241.30', label: '7 feet 11 inches' }
+];
+
+// Resolve a country's state list with some loose matching to handle aliases (e.g., USA / United States)
+const getStateList = (country: string | undefined) => {
+  if (!country) return undefined;
+  // exact match
+  if (STATE_MAP[country]) return STATE_MAP[country];
+  const lc = country.toLowerCase();
+  // try common aliases
+  for (const key of Object.keys(STATE_MAP)) {
+    const keyLc = key.toLowerCase();
+    if (keyLc === lc) return STATE_MAP[key];
+    if (keyLc.includes(lc) || lc.includes(keyLc)) return STATE_MAP[key];
+  }
+  return undefined;
+};
 const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
   reader.onloadend = () => resolve(reader.result as string);
@@ -53,6 +232,7 @@ export function ProfileOptimizerUI() {
   const contactSectionRef = useRef<HTMLDivElement>(null);
   const gallerySectionRef = useRef<HTMLDivElement>(null);
   const [openSection, setOpenSection] = useState<'basic' | 'education' | 'family' | 'hobbies' | 'partner' | 'location' | 'email' | 'contact' | 'gallery' | null>('basic');
+  const isAuthenticated = Boolean(user);
 
   const userDocRef = useMemo(() => user && db ? doc(db, "users", user.uid) : null, [user, db]);
   const { data: profile } = useDoc(userDocRef);
@@ -71,7 +251,7 @@ export function ProfileOptimizerUI() {
     motherTongue: "",
     height: "",
     physicalStatus: "Normal",
-    denomination: "any",
+    denomination: "0",
     diocese: "",
     parish: "",
     education: "",
@@ -90,7 +270,6 @@ export function ProfileOptimizerUI() {
     contactNumber: "",
     countryLivingIn: "",
     residingState: "",
-    residingDistrict: "",
     citizenship: "",
     division: "",
     subcaste: "",
@@ -144,6 +323,19 @@ export function ProfileOptimizerUI() {
     targetAudienceDescription: "",
   });
 
+  // clear or normalize residingState when country changes to a country with a state list
+  useEffect(() => {
+    const states = getStateList(formData.countryLivingIn);
+    if (states && states.length > 0) {
+      // if current residingState is not in the new list, clear it so user can pick
+      if (formData.residingState && !states.includes(formData.residingState)) {
+        setFormData(prev => ({ ...prev, residingState: "" }));
+      }
+    }
+  // intentionally only watch countryLivingIn; formData is used inside but we only care when country changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.countryLivingIn]);
+
   useEffect(() => {
     if (profile) {
       const galleryPhotos = profile.galleryPhotos || profile.images || [];
@@ -164,7 +356,7 @@ export function ProfileOptimizerUI() {
         motherTongue: profile.motherTongue || "",
         height: profile.height || "",
         physicalStatus: profile.physicalStatus || "Normal",
-        denomination: profile.denomination || "any",
+        denomination: profile.denomination || "0",
         diocese: profile.diocese || "",
         parish: profile.parish || "",
         education: profile.education || "",
@@ -183,7 +375,6 @@ export function ProfileOptimizerUI() {
         contactNumber: profile.contactNumber || "",
         countryLivingIn: profile.countryLivingIn || "",
         residingState: profile.residingState || "",
-        residingDistrict: profile.residingDistrict || "",
         citizenship: profile.citizenship || "",
         division: profile.division || "",
         subcaste: profile.subcaste || "",
@@ -252,6 +443,15 @@ export function ProfileOptimizerUI() {
   };
 
   const openSectionAndScroll = (section: 'basic' | 'education' | 'family' | 'hobbies' | 'partner' | 'location' | 'email' | 'contact' | 'gallery', sectionRef: React.RefObject<HTMLDivElement | null>) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Login required",
+        description: "Please log in before editing your profile.",
+      });
+      return;
+    }
+
     setOpenSection(section);
     // allow layout to update before scrolling
     setTimeout(() => scrollToSection(sectionRef), 80);
@@ -293,7 +493,7 @@ export function ProfileOptimizerUI() {
 
   const handleSaveProfile = async (bioToSave?: string) => {
     if (!user || !db) {
-      toast({ title: "Please log in", variant: "destructive" });
+      toast({ title: "Login required", description: "Please log in before editing your profile.", variant: "destructive" });
       return;
     }
 
@@ -330,6 +530,16 @@ export function ProfileOptimizerUI() {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Login required",
+        description: "Please log in before uploading photos.",
+      });
+      e.target.value = "";
+      return;
+    }
+
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -435,6 +645,30 @@ export function ProfileOptimizerUI() {
       return next;
     });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center px-4 py-12">
+        <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+            <User className="h-8 w-8" />
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Login required</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+            Your profile editor is locked until you sign in. Once you log in, you can edit your details, photos, and preferences.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Button asChild className="rounded-full bg-slate-900 px-6 text-white hover:bg-slate-800">
+              <Link href="/login">Log in</Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-full border-slate-200 px-6">
+              <Link href="/">Back to home</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff7f2_0%,#f8fafc_28%,#eef2f7_100%)] text-slate-900">
@@ -544,7 +778,9 @@ export function ProfileOptimizerUI() {
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge className="bg-rose-400 text-white px-2 py-0.5 text-xs">{formData.galleryPhotos.length}/{MAX_PROFILE_IMAGES}</Badge>
-                      <button type="button" className="text-xs text-slate-400" onClick={() => fileInputRef.current?.click()}>add</button>
+                      <button type="button" className="text-xs text-slate-400" aria-label="Edit photos" onClick={() => { openSectionAndScroll('gallery', gallerySectionRef); fileInputRef.current?.click(); }}>
+                        <Edit className="h-4 w-4 text-slate-400" />
+                      </button>
                     </div>
                   </div>
                 </CardContent>
@@ -678,7 +914,7 @@ export function ProfileOptimizerUI() {
                       <Select value={formData.height} onValueChange={(val) => setFormData((prev) => ({ ...prev, height: val }))}>
                         <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Select height" /></SelectTrigger>
                         <SelectContent>
-                          {['4\'6"','4\'8"','4\'10"','5\'0"','5\'2"','5\'4"','5\'6"','5\'8"','5\'10"','6\'0"','6\'2"'].map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                          {HEIGHT_OPTIONS.map(h => <SelectItem key={h.id} value={h.id} disabled={h.id === '0'}>{h.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -705,20 +941,66 @@ export function ProfileOptimizerUI() {
                       <Label className="text-sm font-semibold text-slate-700">Denomination <span className="text-rose-500">*</span></Label>
                       <Select value={formData.denomination} onValueChange={(val) => setFormData((prev) => ({ ...prev, denomination: val }))}>
                         <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Interdenominational</SelectItem>
-                          <SelectItem value="Catholic">Catholic</SelectItem>
-                          <SelectItem value="Baptist">Baptist</SelectItem>
-                          <SelectItem value="Pentecostal">Pentecostal</SelectItem>
-                          <SelectItem value="Anglican">Anglican</SelectItem>
-                          <SelectItem value="Orthodox">Orthodox</SelectItem>
-                        </SelectContent>
-                      </Select>
+                          <SelectContent>
+                            <SelectItem value="0" disabled>--- Select ---</SelectItem>
+                            {DENOMINATIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-slate-700">Division</Label>
-                      <Input value={formData.division} onChange={(e) => setFormData(prev => ({ ...prev, division: e.target.value }))} className="h-10 rounded border-slate-300" />
+                      <Select value={formData.division} onValueChange={(val) => setFormData(prev => ({ ...prev, division: val }))}>
+                        <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0" disabled>--Select--</SelectItem>
+                          <SelectItem value="2">Adi Dravidar</SelectItem>
+                          <SelectItem value="1007">Anglo Indian</SelectItem>
+                          <SelectItem value="2401">Chettiar</SelectItem>
+                          <SelectItem value="1010">Garo</SelectItem>
+                          <SelectItem value="58">Goan</SelectItem>
+                          <SelectItem value="2404">Gounder</SelectItem>
+                          <SelectItem value="2405">Kamma</SelectItem>
+                          <SelectItem value="2406">Kapu</SelectItem>
+                          <SelectItem value="1011">Khasi</SelectItem>
+                          <SelectItem value="506">Knanaya</SelectItem>
+                          <SelectItem value="1012">Kuki</SelectItem>
+                          <SelectItem value="109">Madiga</SelectItem>
+                          <SelectItem value="111">Mahar</SelectItem>
+                          <SelectItem value="116">Mala</SelectItem>
+                          <SelectItem value="2410">Mangalorean</SelectItem>
+                          <SelectItem value="125">Matang</SelectItem>
+                          <SelectItem value="1013">Mizo</SelectItem>
+                          <SelectItem value="133">Mudaliar</SelectItem>
+                          <SelectItem value="1014">Mukkuvar</SelectItem>
+                          <SelectItem value="137">Nadar</SelectItem>
+                          <SelectItem value="1015">Naga</SelectItem>
+                          <SelectItem value="2414">Naidu</SelectItem>
+                          <SelectItem value="2415">Oraon / Kurukh</SelectItem>
+                          <SelectItem value="2416">Padmashali</SelectItem>
+                          <SelectItem value="2417">Pallar / Devendrakula Vellalar</SelectItem>
+                          <SelectItem value="1009">Paravar / Bharathar / Fernando</SelectItem>
+                          <SelectItem value="2418">Parkavakulam / Udayar</SelectItem>
+                          <SelectItem value="2419">Pillai</SelectItem>
+                          <SelectItem value="1008">Pulayar / Cherumar</SelectItem>
+                          <SelectItem value="2421">Rajaka / Vannar</SelectItem>
+                          <SelectItem value="2422">Reddy</SelectItem>
+                          <SelectItem value="2423">Sambavar</SelectItem>
+                          <SelectItem value="176">SC</SelectItem>
+                          <SelectItem value="2425">Setti Balija</SelectItem>
+                          <SelectItem value="214">ST</SelectItem>
+                          <SelectItem value="2402">Thevar / Mukkulathor</SelectItem>
+                          <SelectItem value="2427">Vaniya Chettiar</SelectItem>
+                          <SelectItem value="2428">Vanniya Kula Kshatriyar</SelectItem>
+                          <SelectItem value="2429">Vellalar</SelectItem>
+                          <SelectItem value="2430">Vishwakarma</SelectItem>
+                          <SelectItem value="2431">Yadavar</SelectItem>
+                          <SelectItem value="63">Intercaste</SelectItem>
+                          <SelectItem value="9997">Others</SelectItem>
+                          <SelectItem value="9999">Don't know division</SelectItem>
+                          <SelectItem value="9998">Don't wish to specify</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -731,7 +1013,9 @@ export function ProfileOptimizerUI() {
                       <Select value={formData.motherTongue} onValueChange={(val) => setFormData((prev) => ({ ...prev, motherTongue: val }))}>
                         <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Select language" /></SelectTrigger>
                         <SelectContent>
-                          {['English','Hindi','Bengali','Gujarati','Assamese','Kannada','Malayalam','Tamil','Telugu'].map(lang => <SelectItem key={lang} value={lang}>{lang}</SelectItem>)}
+                          {MOTHER_TONGUES.map((lang) => (
+                            <SelectItem key={lang} value={lang === 'Select Mother Tongue' ? '0' : lang} disabled={lang === 'Select Mother Tongue'}>{lang}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -820,9 +1104,16 @@ export function ProfileOptimizerUI() {
                         <Label className="text-sm font-semibold text-slate-700">Highest Education <span className="text-rose-500">*</span></Label>
                         <Select value={formData.highestEducation} onValueChange={(val) => setFormData(prev => ({ ...prev, highestEducation: val }))}>
                           <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent>
-                            {['High School','Higher Secondary','Diploma','Bachelor\'s','Master\'s','PhD','Other'].map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-                          </SelectContent>
+                            <SelectContent>
+                              {EDUCATION_GROUPS.map(group => (
+                                <SelectGroup key={group.label}>
+                                  <SelectLabel>{group.label}</SelectLabel>
+                                  {group.items.map(item => (
+                                    <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              ))}
+                            </SelectContent>
                         </Select>
                       </div>
 
@@ -850,7 +1141,14 @@ export function ProfileOptimizerUI() {
                         <Select value={formData.occupation} onValueChange={(val) => setFormData(prev => ({ ...prev, occupation: val }))}>
                           <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Select occupation" /></SelectTrigger>
                           <SelectContent>
-                            {['BPO / KPO / ITes Professional','Engineer','Teacher','Doctor','Manager','Other'].map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            {OCCUPATION_GROUPS.map(group => (
+                              <SelectGroup key={group.label}>
+                                <SelectLabel>{group.label}</SelectLabel>
+                                {group.items.map(item => (
+                                  <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -935,7 +1233,9 @@ export function ProfileOptimizerUI() {
                         <Select value={formData.religiousValues} onValueChange={(val) => setFormData(prev => ({ ...prev, religiousValues: val }))}>
                           <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent>
-                            {['Sunday Church Goer','Occasional','Not religious'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                            {RELIGIOUS_VALUES.map(rv => (
+                              <SelectItem key={rv.id} value={rv.id} disabled={rv.id === '0'}>{rv.label}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1103,7 +1403,7 @@ export function ProfileOptimizerUI() {
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-slate-700">Have Children</Label>
                         <Select value={formData.partnerHaveChildren} onValueChange={(val) => setFormData(prev => ({ ...prev, partnerHaveChildren: val }))}>
-                          <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
+                          <SelectTrigger disabled={formData.partnerMaritalStatus === 'Never Married'} className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {["Doesn't matter","No","Yes"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                           </SelectContent>
@@ -1126,7 +1426,8 @@ export function ProfileOptimizerUI() {
                         <Select value={formData.partnerHeight} onValueChange={(val) => setFormData(prev => ({ ...prev, partnerHeight: val }))}>
                           <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {['Any','4 ft 6 in to 5 ft','5 ft to 5 ft 6 in','5 ft 6 in to 6 ft','6 ft+'].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                            <SelectItem value="Any">Any</SelectItem>
+                            {HEIGHT_OPTIONS.filter(h => h.id !== '0').map(h => <SelectItem key={h.id} value={h.id}>{h.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1135,7 +1436,15 @@ export function ProfileOptimizerUI() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-slate-700">Mother Tongue</Label>
-                        <Input value={formData.partnerMotherTongue} onChange={(e) => setFormData(prev => ({ ...prev, partnerMotherTongue: e.target.value }))} className="h-10 rounded border-slate-300" />
+                        <Select value={formData.partnerMotherTongue} onValueChange={(val) => setFormData(prev => ({ ...prev, partnerMotherTongue: val }))}>
+                          <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue placeholder="Any" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Any">Any</SelectItem>
+                            {MOTHER_TONGUES.map((lang) => (
+                              <SelectItem key={lang} value={lang === 'Select Mother Tongue' ? '0' : lang}>{lang}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-slate-700">Physical Status</Label>
@@ -1181,11 +1490,111 @@ export function ProfileOptimizerUI() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-slate-700">Denomination</Label>
-                        <Input value={formData.partnerDenomination} onChange={(e) => setFormData(prev => ({ ...prev, partnerDenomination: e.target.value }))} className="h-10 rounded border-slate-300" />
+                        <Select value={formData.partnerDenomination} onValueChange={(val) => setFormData(prev => ({ ...prev, partnerDenomination: val }))}>
+                          <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Any">Any</SelectItem>
+                            <SelectItem value="Adventist">Adventist</SelectItem>
+                            <SelectItem value="Anglican / Episcopal">Anglican / Episcopal</SelectItem>
+                            <SelectItem value="Apostolic">Apostolic</SelectItem>
+                            <SelectItem value="Assyrian">Assyrian</SelectItem>
+                            <SelectItem value="Assembly of God (AG)">Assembly of God (AG)</SelectItem>
+                            <SelectItem value="Baptist">Baptist</SelectItem>
+                            <SelectItem value="Born Again">Born Again</SelectItem>
+                            <SelectItem value="Brethren">Brethren</SelectItem>
+                            <SelectItem value="Calvinist">Calvinist</SelectItem>
+                            <SelectItem value="Catholic">Catholic</SelectItem>
+                            <SelectItem value="Church of God">Church of God</SelectItem>
+                            <SelectItem value="Church of South India (CSI)">Church of South India (CSI)</SelectItem>
+                            <SelectItem value="Church of Christ">Church of Christ</SelectItem>
+                            <SelectItem value="Church of North India">Church of North India</SelectItem>
+                            <SelectItem value="Congregational">Congregational</SelectItem>
+                            <SelectItem value="East Indian Catholic">East Indian Catholic</SelectItem>
+                            <SelectItem value="Evangelical">Evangelical</SelectItem>
+                            <SelectItem value="Knanaya">Knanaya</SelectItem>
+                            <SelectItem value="Knanaya Catholic">Knanaya Catholic</SelectItem>
+                            <SelectItem value="Knanaya Jacobite">Knanaya Jacobite</SelectItem>
+                            <SelectItem value="Jacobite">Jacobite</SelectItem>
+                            <SelectItem value="Jehovah's Witnesses">Jehovah's Witnesses</SelectItem>
+                            <SelectItem value="Latin Catholic">Latin Catholic</SelectItem>
+                            <SelectItem value="Latter day saints">Latter day saints</SelectItem>
+                            <SelectItem value="Lutheran">Lutheran</SelectItem>
+                            <SelectItem value="Malankara">Malankara</SelectItem>
+                            <SelectItem value="Malabar Independent Syrian Church">Malabar Independent Syrian Church</SelectItem>
+                            <SelectItem value="Marthoma">Marthoma</SelectItem>
+                            <SelectItem value="Melkite">Melkite</SelectItem>
+                            <SelectItem value="Mennonite">Mennonite</SelectItem>
+                            <SelectItem value="Methodist">Methodist</SelectItem>
+                            <SelectItem value="Moravian">Moravian</SelectItem>
+                            <SelectItem value="Orthodox">Orthodox</SelectItem>
+                            <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                            <SelectItem value="Protestant">Protestant</SelectItem>
+                            <SelectItem value="Presbyterian">Presbyterian</SelectItem>
+                            <SelectItem value="Reformed Baptist">Reformed Baptist</SelectItem>
+                            <SelectItem value="Reformed Presbyterian">Reformed Presbyterian</SelectItem>
+                            <SelectItem value="Seventh-day Adventist">Seventh-day Adventist</SelectItem>
+                            <SelectItem value="St. Thomas Evangelical">St. Thomas Evangelical</SelectItem>
+                            <SelectItem value="Syro Malabar">Syro Malabar</SelectItem>
+                            <SelectItem value="Syrian Catholic">Syrian Catholic</SelectItem>
+                            <SelectItem value="Syrian Jacobite">Syrian Jacobite</SelectItem>
+                            <SelectItem value="Syrian Orthodox">Syrian Orthodox</SelectItem>
+                            <SelectItem value="Others">Others</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-slate-700">Division</Label>
-                        <Input value={formData.partnerDivision} onChange={(e) => setFormData(prev => ({ ...prev, partnerDivision: e.target.value }))} className="h-10 rounded border-slate-300" />
+                        <Select value={formData.partnerDivision} onValueChange={(val) => setFormData(prev => ({ ...prev, partnerDivision: val }))}>
+                          <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0" disabled>--Select--</SelectItem>
+                            <SelectItem value="2">Adi Dravidar</SelectItem>
+                            <SelectItem value="1007">Anglo Indian</SelectItem>
+                            <SelectItem value="2401">Chettiar</SelectItem>
+                            <SelectItem value="1010">Garo</SelectItem>
+                            <SelectItem value="58">Goan</SelectItem>
+                            <SelectItem value="2404">Gounder</SelectItem>
+                            <SelectItem value="2405">Kamma</SelectItem>
+                            <SelectItem value="2406">Kapu</SelectItem>
+                            <SelectItem value="1011">Khasi</SelectItem>
+                            <SelectItem value="506">Knanaya</SelectItem>
+                            <SelectItem value="1012">Kuki</SelectItem>
+                            <SelectItem value="109">Madiga</SelectItem>
+                            <SelectItem value="111">Mahar</SelectItem>
+                            <SelectItem value="116">Mala</SelectItem>
+                            <SelectItem value="2410">Mangalorean</SelectItem>
+                            <SelectItem value="125">Matang</SelectItem>
+                            <SelectItem value="1013">Mizo</SelectItem>
+                            <SelectItem value="133">Mudaliar</SelectItem>
+                            <SelectItem value="1014">Mukkuvar</SelectItem>
+                            <SelectItem value="137">Nadar</SelectItem>
+                            <SelectItem value="1015">Naga</SelectItem>
+                            <SelectItem value="2414">Naidu</SelectItem>
+                            <SelectItem value="2415">Oraon / Kurukh</SelectItem>
+                            <SelectItem value="2416">Padmashali</SelectItem>
+                            <SelectItem value="2417">Pallar / Devendrakula Vellalar</SelectItem>
+                            <SelectItem value="1009">Paravar / Bharathar / Fernando</SelectItem>
+                            <SelectItem value="2418">Parkavakulam / Udayar</SelectItem>
+                            <SelectItem value="2419">Pillai</SelectItem>
+                            <SelectItem value="1008">Pulayar / Cherumar</SelectItem>
+                            <SelectItem value="2421">Rajaka / Vannar</SelectItem>
+                            <SelectItem value="2422">Reddy</SelectItem>
+                            <SelectItem value="2423">Sambavar</SelectItem>
+                            <SelectItem value="176">SC</SelectItem>
+                            <SelectItem value="2425">Setti Balija</SelectItem>
+                            <SelectItem value="214">ST</SelectItem>
+                            <SelectItem value="2402">Thevar / Mukkulathor</SelectItem>
+                            <SelectItem value="2427">Vaniya Chettiar</SelectItem>
+                            <SelectItem value="2428">Vanniya Kula Kshatriyar</SelectItem>
+                            <SelectItem value="2429">Vellalar</SelectItem>
+                            <SelectItem value="2430">Vishwakarma</SelectItem>
+                            <SelectItem value="2431">Yadavar</SelectItem>
+                            <SelectItem value="63">Intercaste</SelectItem>
+                            <SelectItem value="9997">Others</SelectItem>
+                            <SelectItem value="9999">Don't know division</SelectItem>
+                            <SelectItem value="9998">Don't wish to specify</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
@@ -1253,24 +1662,29 @@ export function ProfileOptimizerUI() {
                       <Select value={formData.countryLivingIn} onValueChange={(val) => setFormData(prev => ({ ...prev, countryLivingIn: val }))}>
                         <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {['India','USA','UK','Canada','Australia'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Residing State <span className="text-rose-500">*</span></Label>
-                      <Input value={formData.residingState} onChange={(e) => setFormData(prev => ({ ...prev, residingState: e.target.value }))} className="h-10 rounded border-slate-300" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Residing District / City <span className="text-rose-500">*</span></Label>
-                      <Input value={formData.residingDistrict} onChange={(e) => setFormData(prev => ({ ...prev, residingDistrict: e.target.value }))} className="h-10 rounded border-slate-300" />
+                      <Label className="text-sm font-semibold text-slate-700">Residing State / Province <span className="text-rose-500">*</span></Label>
+                      {getStateList(formData.countryLivingIn) && getStateList(formData.countryLivingIn)!.length > 0 ? (
+                        <Select value={formData.residingState} onValueChange={(val) => setFormData(prev => ({ ...prev, residingState: val }))}>
+                          <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {getStateList(formData.countryLivingIn)!.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input placeholder="Enter state / province" value={formData.residingState} onChange={(e) => setFormData(prev => ({ ...prev, residingState: e.target.value }))} className="h-10 rounded border-slate-300" />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-slate-700">Citizenship <span className="text-rose-500">*</span></Label>
                       <Select value={formData.citizenship} onValueChange={(val) => setFormData(prev => ({ ...prev, citizenship: val }))}>
                         <SelectTrigger className="h-10 rounded border-slate-300 bg-white"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {['India','USA','UK','Canada','Australia'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

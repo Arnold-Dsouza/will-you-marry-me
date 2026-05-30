@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { useAuth, useUser } from "@/firebase";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { COUNTRIES, DENOMINATIONS } from '@/lib/profileOptions';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-couple");
@@ -28,6 +29,41 @@ export default function Home() {
   const auth = useAuth();
   const { user } = useUser();
   const { toast } = useToast();
+
+  const successStories = [
+    {
+      id: 1,
+      name: "David & Sarah",
+      date: "Married June 2023",
+      quote:
+        "We found each other through the AI Matching tool. It correctly identified our shared passion for missions and youth ministry.",
+      image: "https://picsum.photos/seed/success_1/600/800",
+    },
+    {
+      id: 2,
+      name: "Michael & Esther",
+      date: "Married February 2024",
+      quote:
+        "The reviews and profile details helped us trust the process. We connected over prayer, church service, and a love for family.",
+      image: "https://picsum.photos/seed/success_2/600/800",
+    },
+    {
+      id: 3,
+      name: "Joshua & Hannah",
+      date: "Married September 2022",
+      quote:
+        "What stood out was the focus on faith first. The platform made it easier to find someone with aligned values and purpose.",
+      image: "https://picsum.photos/seed/success_3/600/800",
+    },
+    {
+      id: 4,
+      name: "Paul & Grace",
+      date: "Married November 2023",
+      quote:
+        "We appreciated how intentional the experience felt. It was simple, warm, and centered on building a Christ-led home.",
+      image: "https://picsum.photos/seed/success_4/600/800",
+    },
+  ];
 
   const [searchParams, setSearchParams] = useState({
     gender: "Female",
@@ -75,10 +111,16 @@ export default function Home() {
 
           <div className="container mx-auto px-4 z-10">
             <div className="max-w-4xl mx-auto text-center space-y-8 mb-16">
-              <h1 className="text-5xl md:text-7xl font-headline font-black text-primary leading-tight">
-                Your God-Ordained <br />
-                <span className="text-accent italic">Life Partner Awaits</span>
-              </h1>
+              <div className="flex justify-center">
+                <Image
+                  src="/logo/logo4.png"
+                  alt="Will You Marry Me"
+                  width={520}
+                  height={180}
+                  priority
+                  className="h-auto w-full max-w-[1020px] object-contain"
+                />
+              </div>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-body">
                 The world's most trusted Christian matrimonial site. Find someone who shares your faith, values, and vision for a Christ-centered home.
               </p>
@@ -145,24 +187,22 @@ export default function Home() {
                       <SelectValue placeholder="Religion" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="any">Any Denomination</SelectItem>
-                      <SelectItem value="Catholic">Catholic</SelectItem>
-                      <SelectItem value="Baptist">Baptist</SelectItem>
-                      <SelectItem value="Pentecostal">Pentecostal</SelectItem>
-                      <SelectItem value="Orthodox">Orthodox</SelectItem>
-                      <SelectItem value="Anglican">Anglican</SelectItem>
+                      {DENOMINATIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-2">Location</label>
-                  <Input 
-                    className="h-12 rounded-full bg-white border-muted" 
-                    placeholder="City or Country" 
-                    value={searchParams.location}
-                    onChange={(e) => setSearchParams(p => ({ ...p, location: e.target.value }))}
-                  />
+                  <Select value={searchParams.location} onValueChange={(val) => setSearchParams(p => ({ ...p, location: val }))}>
+                    <SelectTrigger className="h-12 rounded-full bg-white border-muted">
+                      <SelectValue placeholder="Location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Any">Any Location</SelectItem>
+                      {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button size="lg" className="h-12 rounded-full font-bold shadow-lg hover:shadow-xl transition-all" onClick={handleSearch}>
@@ -253,30 +293,38 @@ export default function Home() {
               <p className="text-muted-foreground">Join thousands of couples who found their God-ordained partner here.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {[1, 2].map((i) => (
-                <Card key={i} className="border-none shadow-xl bg-white overflow-hidden flex flex-col md:flex-row h-full">
-                  <div className="relative w-full md:w-1/2 aspect-[4/3] md:aspect-auto">
-                    <Image
-                      src={`https://picsum.photos/seed/success_${i}/600/800`}
-                      alt="Success Story"
-                      fill
-                      className="object-cover"
-                      data-ai-hint="happy couple"
-                    />
-                  </div>
-                  <div className="p-8 md:w-1/2 flex flex-col justify-center space-y-4">
-                    <Quote className="w-10 h-10 text-accent/20" />
-                    <p className="italic text-lg text-muted-foreground leading-relaxed">
-                      "We found each other through the AI Matching tool. It correctly identified our shared passion for missions and youth ministry."
-                    </p>
-                    <div>
-                      <h4 className="font-bold text-xl">David & Sarah</h4>
-                      <p className="text-sm text-accent font-medium">Married June 2023</p>
+            <div className="group relative -mx-4 overflow-hidden px-4">
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-muted/30 to-transparent md:w-32" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-muted/30 to-transparent md:w-32" />
+
+              <div className="success-stories-track flex w-max gap-8 py-2">
+                {[...successStories, ...successStories].map((story, index) => (
+                  <Card
+                    key={`${story.id}-${index}`}
+                    className="w-[320px] flex-none border-none bg-white shadow-xl overflow-hidden flex flex-col sm:w-[420px]"
+                  >
+                    <div className="relative aspect-[4/3] w-full">
+                      <Image
+                        src={story.image}
+                        alt={story.name}
+                        fill
+                        className="object-cover"
+                        data-ai-hint="happy couple"
+                      />
                     </div>
-                  </div>
-                </Card>
-              ))}
+                    <div className="p-8 flex flex-1 flex-col justify-center space-y-4">
+                      <Quote className="w-10 h-10 text-accent/20" />
+                      <p className="italic text-lg text-muted-foreground leading-relaxed">
+                        "{story.quote}"
+                      </p>
+                      <div>
+                        <h4 className="font-bold text-xl">{story.name}</h4>
+                        <p className="text-sm text-accent font-medium">{story.date}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
             
             <div className="mt-12 text-center">
@@ -311,6 +359,25 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      <style jsx global>{`
+        .success-stories-track {
+          animation: success-stories-ltr 42s linear infinite;
+        }
+
+        .group:hover .success-stories-track {
+          animation-play-state: paused;
+        }
+
+        @keyframes success-stories-ltr {
+          from {
+            transform: translateX(-50%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
 
       <footer className="bg-primary text-primary-foreground py-20">
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-12">
